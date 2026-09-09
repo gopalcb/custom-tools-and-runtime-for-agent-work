@@ -1,0 +1,15 @@
+version: 1
+quality:
+  requirements:
+    - generated_agent_has_valid_agent_yaml
+    - generated_agent_has_non_empty_instructions
+    - generated_agent_has_skills_definition
+    - generated_agent_has_evaluation_definition
+    - generated_agent_name_is_normalized_once
+    - existing_agent_is_not_overwritten_by_default
+    - generated_agent_does_not_duplicate_gateway_runtime_logic
+smoke_tests:
+  - name: preview-does-not-write
+    expectation: Previewing an agent design causes no filesystem changes.
+  - name: duplicate-protection
+    expectation: Building an existing agent without overwrite fails safely.

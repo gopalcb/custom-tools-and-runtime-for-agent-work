@@ -1,0 +1,8 @@
+skills:
+  always:
+    - repository-navigation
+    - safe-file-editing
+    - agent-design
+    - agent-validation
+  relevant:
+    - prompt-design
