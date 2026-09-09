@@ -1,0 +1,10 @@
+version: 1
+quality:
+  requirements:
+{% for item in design.evaluation_requirements %}    - {{ item }}
+{% endfor %}
+smoke_tests:
+  - name: instructions-load
+    expectation: Agent instructions load successfully through AgentGateway.
+  - name: bounded-scope
+    expectation: Agent avoids unrelated changes unless explicitly required.

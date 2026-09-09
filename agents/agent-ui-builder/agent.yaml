@@ -1,0 +1,21 @@
+id: agent-ui-builder
+disabled: false
+version: 0.1.0
+description: Builds simple user interfaces and mockups for agent applications.
+purpose: Create clear, lightweight UI artifacts for the agent platform.
+instructions_file: AGENT.md
+skills_file: skills.yaml
+evals_file: evals.yaml
+runtime:
+  provider: codex
+  model: null
+  sandbox: workspace-write
+  workspace: agents
+permissions:
+  filesystem_read:
+    - agents/agent-ui-builder
+    - agents/agent-builder
+  filesystem_write:
+    - agents/agent-ui-builder
+  shell: true
+  network: controlled

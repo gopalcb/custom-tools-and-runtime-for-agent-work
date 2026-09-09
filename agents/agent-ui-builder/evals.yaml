@@ -1,0 +1,7 @@
+version: 1
+quality:
+  requirements:
+    - standalone_html_opens_without_build_step
+    - form_is_keyboard_usable
+    - preview_does_not_require_backend
+    - backend_errors_are_displayed_without_destroying_form_state

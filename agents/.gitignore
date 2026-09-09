@@ -1,0 +1,8 @@
+.agent-state/sessions/*
+.agent-state/cache/*
+.agent-state/logs/*
+!.agent-state/sessions/.gitkeep
+!.agent-state/cache/.gitkeep
+!.agent-state/logs/.gitkeep
+__pycache__/
+*.pyc
