@@ -1,0 +1,24 @@
+<section class="portal-page">
+  <nav class="portal-tabs" aria-label="Agent messaging portal views">
+    <button type="button" [class.active]="activeTab() === 'overview'" (click)="activeTab.set('overview')">Overview</button>
+    <button type="button" [class.active]="activeTab() === 'channels'" (click)="activeTab.set('channels')">Active channels</button>
+    <button type="button" [class.active]="activeTab() === 'queue'" (click)="activeTab.set('queue')">Delivery queue</button>
+    <button type="button" [class.active]="activeTab() === 'audit'" (click)="activeTab.set('audit')">Message audit</button>
+  </nav>
+
+  @if (activeTab() === 'overview') {
+    <div class="portal-heading"><div><h2 class="section-title">Agent messaging portal</h2><p class="subcopy">Coordinate messages between Codex Client, runtime agents, and workflow channels.</p></div><span class="status-badge">CONNECTED</span></div>
+    <div class="portal-grid">
+      <article class="portal-card panel"><span class="card-kicker">Live channels</span><strong>04</strong><p>Agent conversations currently available to the runtime.</p></article>
+      <article class="portal-card panel"><span class="card-kicker">Queued messages</span><strong>07</strong><p>Messages waiting for delivery or agent acknowledgement.</p></article>
+      <article class="portal-card panel"><span class="card-kicker">Delivery health</span><strong>99.8%</strong><p>Successful delivery across the current runtime session.</p></article>
+    </div>
+    <article class="message-stream panel"><div class="stream-heading"><div><p class="eyebrow">Recent activity</p><h3>Message stream</h3></div><span class="stream-live">● LIVE</span></div><div class="message-row"><span class="message-icon">↗</span><div><strong>Codex Client → implementation-planner</strong><p>Task plan requested for the controller UI refresh.</p></div><time>now</time></div><div class="message-row"><span class="message-icon">↙</span><div><strong>runtime-orchestrator → Codex Client</strong><p>Implementation checkpoint persisted successfully.</p></div><time>2m</time></div><div class="message-row"><span class="message-icon">↗</span><div><strong>Codex Client → agent-builder</strong><p>Awaiting generated task handoff.</p></div><time>5m</time></div></article>
+  } @else if (activeTab() === 'channels') {
+    <div class="portal-heading"><div><h2 class="section-title">Active channels</h2><p class="subcopy">Live routes connecting the client to runtime participants.</p></div></div><div class="channel-list panel"><div class="channel-row"><span class="channel-state"></span><div><strong>Codex Client</strong><p>Primary operator conversation</p></div><span class="channel-meta">CONNECTED</span></div><div class="channel-row"><span class="channel-state"></span><div><strong>runtime-orchestrator</strong><p>Workflow and event coordination</p></div><span class="channel-meta">CONNECTED</span></div><div class="channel-row"><span class="channel-state busy"></span><div><strong>implementation-planner</strong><p>Task planning and handoff</p></div><span class="channel-meta">BUSY</span></div></div>
+  } @else if (activeTab() === 'queue') {
+    <div class="portal-heading"><div><h2 class="section-title">Delivery queue</h2><p class="subcopy">Messages staged for agent delivery and acknowledgement.</p></div></div><article class="queue-card panel"><div class="queue-line"><span class="queue-number">01</span><div><strong>Implementation checkpoint</strong><p>Destination: runtime-orchestrator</p></div><span class="queue-status">READY</span></div><div class="queue-line"><span class="queue-number">02</span><div><strong>Generated task handoff</strong><p>Destination: agent-builder</p></div><span class="queue-status">WAITING</span></div><div class="queue-line"><span class="queue-number">03</span><div><strong>Memory persistence notice</strong><p>Destination: memory-service</p></div><span class="queue-status">WAITING</span></div></article>
+  } @else {
+    <div class="portal-heading"><div><h2 class="section-title">Message audit</h2><p class="subcopy">Traceable message facts retained by the runtime.</p></div></div><article class="audit-card panel"><div class="audit-row"><time>10:42:18</time><span>DELIVERED</span><strong>Codex Client → runtime-orchestrator</strong></div><div class="audit-row"><time>10:41:55</time><span>ACKNOWLEDGED</span><strong>implementation-planner → Codex Client</strong></div><div class="audit-row"><time>10:39:07</time><span>DELIVERED</span><strong>Codex Client → agent-builder</strong></div></article>
+  }
+</section>

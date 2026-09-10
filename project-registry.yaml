@@ -1,28 +1,36 @@
 version: 1
-projects:
-  agent-builder:
-    disabled: false
-    path: agents/agent-builder
-    aliases:
-      - builder
-      - build agent
-      - create agent
-      - agent creation
-      - agent builder
-    description: >
-      Builds, validates, scaffolds, and registers agents. Handles agent design,
-      instructions, skills, runtime configuration, permissions, templates, and
-      initial evaluation definitions.
 
-  agent-ui-builder:
-    disabled: false
-    path: agents/agent-ui-builder
-    aliases:
-      - ui builder
-      - agent ui
-      - html mockup
-      - interface mockup
-      - frontend mockup
-    description: >
-      Builds user interfaces and visual prototypes for agent applications.
-      V1 focuses on lightweight standalone HTML mockups for the Agent Builder.
+paths:
+  agents: agents
+  workflows: agent-runtime/agent-monorepo/workflows/workflow-orchestrator.yaml
+  workflow_steps: agent-runtime/agent-monorepo/workflows/workflow-steps.yaml
+  state: .agent-state
+  messaging: .agent-state/agents-messaging
+
+runtime:
+  default_agent: codex-agent
+  default_workflow: codex-smoke
+  max_parallel_tasks: 3
+
+codex:
+  command: codex app-server
+  supported_cli: ">=0.153.4,<0.154.0"
+  working_directory: .
+  approval_policy: never
+  sandbox: workspace-write
+  network_access: true
+  writable_roots:
+    - .
+
+model_profiles:
+  standard: null
+
+memory:
+  enabled: true
+  semantic_retrieval: false
+  extraction: false
+
+validation:
+  typecheck: python -m compileall agent-runtime agent-gateway
+  tests: python -m pytest
+  agent: 'python -c "from agent_monorepo.registry import Registry; Registry(''.'')"'

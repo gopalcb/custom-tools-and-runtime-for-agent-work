@@ -1,0 +1,13 @@
+<section class="thread-page">
+  <nav class="thread-tabs" aria-label="Task thread views">
+    <button type="button" [class.active]="activeTab() === 'thread'" (click)="activeTab.set('thread')">Task thread</button>
+    <button type="button" [class.active]="activeTab() === 'config'" (click)="activeTab.set('config')">Task config</button>
+    <button type="button" [class.active]="activeTab() === 'generated'" (click)="activeTab.set('generated')">Agent generated tasks</button>
+  </nav>
+  @if (activeTab() === 'thread') {
+    <div class="thread-layout">
+      <section class="task-column"><div class="list-heading"><h3>TODO</h3><span>1 active</span></div>@if (store.tasks().length) { <app-task-card [task]="store.tasks()[0]" [selected]="selected()?.id === store.tasks()[0].id" (taskSelected)="choose($event)" /> } @else { <div class="empty-state">Loading task thread…</div> }</section>
+      <section class="task-column"><div class="list-heading"><h3>Implemented</h3><span>{{ store.tasks().length - 1 }} complete</span></div><div class="cards">@for (task of store.tasks().slice(1); track task.id) { <app-task-card [task]="task" [selected]="selected()?.id === task.id" (taskSelected)="choose($event)" /> }</div></section>
+    </div>
+  } @else { <div class="blank-tab" aria-live="polite"></div> }
+</section>

@@ -1,0 +1,1 @@
+<button class="skill-card" [class.selected]="selected()" type="button" (click)="skillSelected.emit(skill().id)"><span class="skill-icon">✦</span><span><strong>{{skill().name}}</strong><small>{{skill().category}} · {{skill().summary}}</small></span><span class="arrow">→</span></button>

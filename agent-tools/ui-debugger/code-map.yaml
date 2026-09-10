@@ -1,0 +1,42 @@
+project: interactive-web-search
+files:
+  api.py:
+    purpose: Proxy Codex SDK API routes for debugger and controller clients.
+    functions:
+      create_app:
+        summary: Build the debugger-facing Codex SDK proxy API.
+      main:
+        summary: Run the local debugger API proxy.
+    classes:
+      CodexDebuggerApi:
+        functions:
+          __init__:
+            summary: Configure the downstream Codex SDK API URL.
+          request_json:
+            summary: Call a JSON SDK endpoint.
+          stream_turn:
+            summary: Stream raw SDK event-log lines for one turn.
+  cli.py:
+    purpose: Python module in the project.
+    functions:
+      load_config:
+      parse_args:
+      main:
+  services/browser.py:
+    purpose: Python module in the project.
+    functions:
+      _setting:
+      _visible_element:
+      _find_prompt_input:
+      _submit_prompt:
+      start_search:
+  services/extractor.py:
+    purpose: Python module in the project.
+    functions:
+      extract_assistant_messages:
+      wait_for_complete_response:
+      save_markdown:
+  services/validation.py:
+    purpose: Python module in the project.
+    functions:
+      validate_payload:

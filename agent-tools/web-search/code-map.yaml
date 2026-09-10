@@ -1,0 +1,14 @@
+project: web-search
+files:
+  cli.py:
+    purpose: Build a search request, call the service, and print its JSON result.
+    functions: [parse_args, main]
+  model.py:
+    purpose: Define web-search request, source, and response data structures.
+    functions: [SearchSource.to_dict, SearchResponse.to_dict]
+  validation.py:
+    purpose: Validate and normalize service-boundary request and response data.
+    functions: [validate_search_request, validate_search_response]
+  service.py:
+    purpose: Run structured Codex web research and persist JSON results as Markdown.
+    functions: [build_search_prompt, search_response_schema, search, json_to_markdown, save_markdown]

@@ -1,0 +1,35 @@
+version: 1
+
+workflows:
+  workflow-selection:
+    phase: planning
+    steps:
+      - ref: analyze
+      - ref: resolve-context
+      - ref: web-research
+      - ref: plan
+
+  codex-smoke:
+    phase: execution
+    steps:
+      - ref: execute
+
+  default:
+    phase: execution
+    steps:
+      - ref: execute
+      - ref: validate
+      - ref: finalize
+
+  implementation-planning:
+    phase: execution
+    steps:
+      - ref: finalize
+
+  build-agent:
+    phase: execution
+    steps:
+      - ref: design
+      - ref: ui
+      - ref: agent-validate
+      - ref: finalize

@@ -1,0 +1,30 @@
+project: agent-implementation-planner
+
+files:
+  planner.py:
+    purpose: Build prompts, invoke the shared Codex SDK, and write planning artifacts.
+    functions:
+      parse_args:
+        summary: Parse planning task and runtime options.
+      load_planner_instructions:
+        summary: Load the permanent planning instructions.
+      get_schema_path:
+        summary: Return the structured plan schema path.
+      build_prompt:
+        summary: Combine instructions, repository, task, and context.
+      create_plan:
+        summary: Invoke the shared Codex SDK with read-only access and structured output.
+      render_plan_markdown:
+        summary: Render validated plan JSON as worker-readable Markdown.
+      create_run_directory:
+        summary: Create a unique UTC directory for planning artifacts.
+      main:
+        summary: Execute the complete planner CLI workflow.
+
+  validation.py:
+    purpose: Validate planner inputs and generated plan structure.
+    functions:
+      validate_cli_inputs:
+        summary: Validate repository, output directory, schema, and Codex CLI.
+      validate_plan:
+        summary: Validate required plan sections, tasks, and dependencies.

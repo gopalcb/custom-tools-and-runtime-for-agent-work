@@ -1,0 +1,2 @@
+import { CommonModule } from '@angular/common'; import { Component, inject, signal } from '@angular/core'; import { StoreService } from '../../shared-services/store.service';
+@Component({selector:'app-work-logs-view',standalone:true,imports:[CommonModule],templateUrl:'./work-logs-view.component.html',styleUrl:'./work-logs-view.component.css'}) export class WorkLogsViewComponent { readonly store=inject(StoreService); readonly activeTab=signal('activity'); }

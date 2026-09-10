@@ -1,0 +1,2 @@
+import { CommonModule } from '@angular/common'; import { Component, inject, signal } from '@angular/core'; import { StoreService } from '../../shared-services/store.service';
+@Component({selector:'app-memory-view',standalone:true,imports:[CommonModule],templateUrl:'./memory-view.component.html',styleUrl:'./memory-view.component.css'}) export class MemoryViewComponent { readonly store=inject(StoreService); readonly activeTab=signal('short-term'); }
