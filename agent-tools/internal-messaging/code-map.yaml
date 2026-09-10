@@ -1,0 +1,10 @@
+project: internal-messaging
+files:
+  src/agents_internal_messaging/models.py:
+    purpose: Message and message-record data contracts.
+  src/agents_internal_messaging/bus.py:
+    purpose: Atomic file-backed message persistence and querying.
+  src/agents_internal_messaging/cli.py:
+    purpose: Agent-facing send and inspection commands.
+  src/agents_internal_messaging/hub.py:
+    purpose: Optional polling and handler dispatch.

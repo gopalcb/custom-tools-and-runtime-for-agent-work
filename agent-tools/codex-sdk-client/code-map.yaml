@@ -1,0 +1,8 @@
+project: codex-sdk-client
+files:
+  api.py:
+    purpose: Expose the shared Codex SDK client through Flask.
+    classes:
+      CodexApiService:
+        functions: [__init__, start_turn, collect_turn, steer_turn, interrupt_turn, close]
+    functions: [serialize_sdk_event, create_app, main]

@@ -1,22 +1,28 @@
+version: 1
+
 id: agent-builder
-disabled: false
-version: 0.1.0
-description: Designs, validates, scaffolds, and registers monorepo agents.
-purpose: Build high-quality project agents from concise user requirements.
-instructions_file: AGENT.md
-skills_file: skills.yaml
-evals_file: evals.yaml
-runtime:
-  provider: codex
-  model: null
-  sandbox: workspace-write
-  workspace: agents
-permissions:
-  filesystem_read:
-    - agents
-    - AGENT_MAP.md
-    - project-registry.yaml
-  filesystem_write:
-    - agents
-  shell: true
-  network: controlled
+name: Agent Builder
+description: Design, validate, and create declarative monorepo agents.
+aliases:
+  - builder
+  - build agent
+  - create agent
+  - agent creation
+
+instructions: instructions.md
+workflow: build-agent
+
+skills:
+  - repository-navigation
+  - safe-file-editing
+  - agent-design
+  - agent-validation
+  - prompt-design
+
+tools:
+  - repo
+  - shell
+  - web_search
+  - agent_messaging
+
+model_profile: standard

@@ -1,0 +1,23 @@
+browser:
+  user_data_dir: "~/Library/Application Support/Google/Chrome"
+  profile_directory: "Default"
+  page_load_timeout_seconds: 30
+  prompt_timeout_seconds: 30
+  response_timeout_seconds: 180
+  response_stability_seconds: 3
+  poll_interval_seconds: 0.5
+
+active_profile: chatgpt
+
+profiles:
+  chatgpt:
+    enabled: true
+    url: "https://chatgpt.com/g/g-p-6aa1e5d028a4819192303e47ac7c6180/project"
+    prompt_selector: "textarea[name='prompt-textarea']"
+    visible_editor_selector: "[contenteditable='true']"
+    send_button_selector: "button[data-testid='send-button']"
+    assistant_selector: "[data-message-author-role='assistant']"
+  google:
+    enabled: false
+    url: "https://www.google.com/"
+    prompt_selector: "textarea[name='q']"

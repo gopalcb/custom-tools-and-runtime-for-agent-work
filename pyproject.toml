@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agent-monorepo"
+version = "0.1.0"
+description = "Local agent control plane powered by Codex App Server"
+requires-python = ">=3.10"
+dependencies = [
+  "PyYAML>=6.0,<7",
+  "openai-codex>=0.147,<0.148",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8,<9"]
+
+[project.scripts]
+agent-msg = "agents_internal_messaging.cli:main"
+agent-hub = "agents_internal_messaging.hub:main"
+
+[tool.setuptools]
+packages = ["agent_monorepo", "agent_monorepo.memory", "agent_monorepo.workflows", "agents_internal_messaging"]
+py-modules = ["gateway"]
+package-dir = { agent_monorepo = "agent-runtime/agent-monorepo", "agent_monorepo.memory" = "agent-runtime/agent-monorepo/memory", agents_internal_messaging = "agent-tools/internal-messaging/src/agents_internal_messaging", "" = "agent-gateway" }
+
+[tool.setuptools.package-data]
+agent_monorepo = ["workflows/*.yaml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [
+  "agent-runtime/agent-monorepo",
+  "agent-gateway",
+  "agent-tools/internal-messaging/src",
+]
+addopts = "-ra"
