@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Codex Agent Architecture Components</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <main class="diagram-page">
+    <div class="diagram-sheet">
+      <h1 class="diagram-title">Codex Agent Architecture Components</h1>
+      <p class="diagram-subtitle">Declarative examples for reusable flow, tree, and event hub diagrams.</p>
+      <section class="db-diagram"><h2 class="db-diagram__heading">Agent routing flow</h2><div class="db-flow"><div class="db-label db-label--upper">USER PROMPT</div>
+<div class="db-connector db-connector--down" aria-hidden="true"></div>
+<div class="db-label db-label--normal">Agent Resolver</div>
+<div class="db-connector db-connector--branch-right" aria-hidden="true"><div class="db-connector__spine"></div><ul class="db-connector__branches"><li class="db-connector__branch">determine owner</li></ul></div>
+<div class="db-label db-label--lower">frontend-developer</div>
+<div class="db-connector db-connector--down" aria-hidden="true"></div>
+<div class="db-label db-label--upper">CODEX SKILL SELECTION</div>
+<div class="db-connector db-connector--branch-right" aria-hidden="true"><div class="db-connector__spine"></div><ul class="db-connector__branches"><li class="db-connector__branch">angular-development</li>
+<li class="db-connector__branch">api-integration</li>
+<li class="db-connector__branch">ui-design-rules</li>
+<li class="db-connector__branch">browser-validation</li></ul></div></div></section>
+<section class="db-diagram"><h2 class="db-diagram__heading">Repository tree</h2><div class="db-tree"><span class="db-tree__root">monorepo/</span><ul><li><span class="db-tree__file">AGENTS.md</span></li>
+<li><span class="db-tree__file">ARCHITECTURE.md</span></li>
+<li><span class="db-tree__file">code-map.yaml</span></li>
+<li><span class="db-tree__folder">.agents/</span><ul><li><span class="db-tree__folder">skills/</span><ul><li><span class="db-tree__folder">ui-design-rules/</span><ul><li><span class="db-tree__file">SKILL.md</span></li></ul></li>
+<li><span class="db-tree__file">angular-development/</span></li></ul></li></ul></li></ul></div></section>
+<section class="db-diagram"><h2 class="db-diagram__heading">Runtime event pipeline</h2>
+<div class="db-bus">
+  
+  <svg class="db-bus__connectors" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+    <defs>
+      <marker id="db-arrow" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="5" markerHeight="5" orient="auto">
+        <path d="M0,0 L8,4 L0,8 Z" />
+      </marker>
+    </defs>
+    <line x1="50" y1="9" x2="50" y2="15" />
+    <line x1="22.0" y1="15" x2="78.0" y2="15" />
+    <line x1="22.0" y1="15" x2="22.0" y2="19" /><line x1="22.0" y1="25" x2="22.0" y2="31" />
+<line x1="50.0" y1="15" x2="50.0" y2="19" /><line x1="50.0" y1="25" x2="50.0" y2="31" />
+<line x1="78.0" y1="15" x2="78.0" y2="19" /><line x1="78.0" y1="25" x2="78.0" y2="31" />
+    <line x1="22.0" y1="31" x2="78.0" y2="31" />
+    <line x1="50" y1="31" x2="50" y2="35" marker-end="url(#db-arrow)" />
+    <line x1="50" y1="41" x2="50" y2="47" />
+    <line x1="34.0" y1="47" x2="66.0" y2="47" />
+    <line x1="34.0" y1="47" x2="34.0" y2="52" />
+<line x1="66.0" y1="47" x2="66.0" y2="52" />
+    <line x1="50" y1="58" x2="50" y2="67" marker-end="url(#db-arrow)" />
+    <line x1="50" y1="73" x2="50" y2="79" />
+    <line x1="25.0" y1="79" x2="75.0" y2="79" />
+    <line x1="25.0" y1="79" x2="25.0" y2="80" />
+<line x1="50.0" y1="79" x2="50.0" y2="80" />
+<line x1="75.0" y1="79" x2="75.0" y2="80" />
+    <line x1="75.0" y1="84" x2="75.0" y2="91" marker-end="url(#db-arrow)" />
+  </svg>
+
+  <div class="db-bus__node db-bus__runtime" style="--db-x:50%;--db-y:6%;">Agent Runtime</div>
+  <div class="db-bus__node db-bus__source" style="--db-x:22.0%;--db-y:22%;">model events</div>
+<div class="db-bus__node db-bus__source" style="--db-x:50.0%;--db-y:22%;">tool events</div>
+<div class="db-bus__node db-bus__source" style="--db-x:78.0%;--db-y:22%;">workflow events</div>
+  <div class="db-bus__node db-bus__hub" style="--db-x:50%;--db-y:38%;">EventHub</div>
+  <div class="db-bus__node db-bus__output" style="--db-x:34.0%;--db-y:55%;">events.jsonl</div>
+<div class="db-bus__node db-bus__output" style="--db-x:66.0%;--db-y:55%;">live subscribers</div><div class="db-bus__caption" style="--db-x:66.0%;--db-y:65%;">Codex Agent Console</div>
+  <div class="db-bus__node" style="--db-x:50%;--db-y:70%;">PostCompletion</div>
+  <div class="db-bus__node db-bus__artifact" style="--db-x:25.0%;--db-y:82%;">run.json</div>
+<div class="db-bus__node db-bus__artifact" style="--db-x:50.0%;--db-y:82%;">summary.md</div>
+<div class="db-bus__node db-bus__artifact" style="--db-x:75.0%;--db-y:82%;">metrics</div>
+  <div class="db-bus__caption" style="--db-x:75.0%;--db-y:94%;">memory candidates</div>
+</div>
+</section>
+    </div>
+  </main>
+</body>
+</html>

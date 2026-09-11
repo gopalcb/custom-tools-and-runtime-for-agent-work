@@ -1,0 +1,16 @@
+{
+  "id": "43850400bd2445b4894da1eaadf552b9",
+  "created_at": "2026-09-10T23:10:22.459Z",
+  "sender": "monorepo-controller",
+  "recipient": "agent-ui-debugger",
+  "type": "ui_debug_request",
+  "payload": {
+    "url": "http://127.0.0.1:4201/",
+    "request_id": "controller-ui-e2e",
+    "wait_seconds": 1,
+    "viewport_width": 1440,
+    "viewport_height": 1200,
+    "full_page_screenshot": true
+  },
+  "reply_to": null
+}

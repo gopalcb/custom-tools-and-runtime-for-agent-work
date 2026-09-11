@@ -56,6 +56,7 @@ class FakeCodexClient:
         *,
         developer_instructions: str,
         model: str | None = None,
+        effort: str | None = None,
         thread_id: str | None = None,
     ):
         self.turns.append(
@@ -63,6 +64,7 @@ class FakeCodexClient:
                 "prompt": prompt,
                 "developer_instructions": developer_instructions,
                 "model": model,
+                "effort": effort,
                 "thread_id": thread_id,
             }
         )
@@ -187,9 +189,15 @@ class FakeTransportIntegrationTests(unittest.IsolatedAsyncioTestCase):
         path.write_text(yaml.safe_dump(value, sort_keys=False), encoding="utf-8")
 
     def _write_project(self) -> None:
-        (self.project_root / "agents" / "smoke-agent").mkdir(parents=True)
-        (self.project_root / "agents" / "skills").mkdir(parents=True)
-        (self.project_root / "agents" / "smoke-agent" / "instructions.md").write_text(
+        (self.project_root / "agent-config" / "agents" / "smoke-agent").mkdir(parents=True)
+        (self.project_root / "agent-config" / "skills").mkdir(parents=True)
+        (
+            self.project_root
+            / "agent-config"
+            / "agents"
+            / "smoke-agent"
+            / "instructions.md"
+        ).write_text(
             "Return a deterministic smoke-test result.\n", encoding="utf-8"
         )
         self._write_yaml(
@@ -197,10 +205,10 @@ class FakeTransportIntegrationTests(unittest.IsolatedAsyncioTestCase):
             {
                 "version": 1,
                 "paths": {
-                    "agents": "agents",
+                    "agents": "agent-config/agents",
                     "workflows": "agent-runtime/agent-monorepo/workflows/workflow-orchestrator.yaml",
                     "state": ".agent-state",
-                    "skills": "agents/skills",
+                    "skills": "agent-config/skills",
                 },
                 "runtime": {
                     "default_agent": "smoke-agent",
@@ -216,7 +224,12 @@ class FakeTransportIntegrationTests(unittest.IsolatedAsyncioTestCase):
                     "network_access": False,
                     "writable_roots": ["."],
                 },
-                "model_profiles": {"standard": None},
+                "model_profiles": {
+                    "standard": {
+                        "model": "gpt-5.5",
+                        "effort": "medium",
+                    }
+                },
                 "memory": {
                     "enabled": False,
                     "semantic_retrieval": False,
@@ -269,7 +282,7 @@ class FakeTransportIntegrationTests(unittest.IsolatedAsyncioTestCase):
             },
         )
         self._write_yaml(
-            self.project_root / "agents" / "smoke-agent" / "agent.yaml",
+            self.project_root / "agent-config" / "agents" / "smoke-agent" / "agent.yaml",
             {
                 "version": 1,
                 "id": "smoke-agent",
@@ -302,6 +315,8 @@ class FakeTransportIntegrationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(1, len(client.turns))
         self.assertIn(prompt, str(client.turns[0]["prompt"]))
         self.assertIn("Allowed tools: repo", str(client.turns[0]["developer_instructions"]))
+        self.assertEqual("gpt-5.5", client.turns[0]["model"])
+        self.assertEqual("medium", client.turns[0]["effort"])
 
         event_types = [item.type for item in events]
         self.assertEqual("run.started", event_types[0])

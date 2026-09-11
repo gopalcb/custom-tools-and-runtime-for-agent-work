@@ -127,6 +127,69 @@ class CodexClientApprovalTests(unittest.IsolatedAsyncioTestCase):
         client.request.assert_awaited_once_with("model/list", {})
         client.start.assert_awaited_once_with()
 
+    async def test_stream_turn_sends_model_and_effort_to_turn_start(self) -> None:
+        client = self._client()
+        client.start = AsyncMock()
+        calls: list[tuple[str, dict[str, object]]] = []
+
+        async def request(method: str, params: dict[str, object]) -> dict[str, object]:
+            calls.append((method, params))
+            if method == "thread/start":
+                return {"thread": {"id": "thread-effort"}}
+            if method == "turn/start":
+                return {"turn": {"id": "turn-effort"}}
+            raise AssertionError(f"Unexpected request: {method}")
+
+        client.request = request
+        await client._messages.put(
+            {
+                "method": "turn/completed",
+                "params": {"threadId": "thread-effort", "turnId": "turn-effort"},
+            }
+        )
+
+        events = [
+            item
+            async for item in client.stream_turn(
+                "Run it",
+                developer_instructions="Be direct.",
+                model="gpt-5.5",
+                effort="medium",
+            )
+        ]
+
+        self.assertEqual("client/thread", events[0]["method"])
+        self.assertEqual("thread/start", calls[0][0])
+        self.assertEqual("gpt-5.5", calls[0][1]["model"])
+        self.assertEqual("turn/start", calls[1][0])
+        self.assertEqual("gpt-5.5", calls[1][1]["model"])
+        self.assertEqual("medium", calls[1][1]["effort"])
+
+    async def test_status_command_reports_version_without_starting_server(self) -> None:
+        client = self._client()
+        client.check_version = AsyncMock(return_value=(0, 154, 0))
+        client.request = AsyncMock()
+
+        result = await client.run_command("/status")
+
+        self.assertEqual("/status", result["command"])
+        self.assertEqual("0.154.0", result["version"])
+        self.assertFalse(result["running"])
+        client.request.assert_not_awaited()
+
+    async def test_compact_command_uses_current_app_server_method(self) -> None:
+        client = self._client()
+        client._active_turn = ("thread-1", "turn-1")
+        client.request = AsyncMock(return_value={"started": True})
+
+        result = await client.run_command("/compact")
+
+        self.assertEqual({"command": "/compact", "started": True}, result)
+        client.request.assert_awaited_once_with(
+            "thread/compact/start",
+            {"threadId": "thread-1"},
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

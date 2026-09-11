@@ -1,0 +1,53 @@
+version: 1.0.0
+component: button
+extends: ./root.yaml
+purpose: Primary and secondary action controls
+
+shared:
+  radius_px: 4
+  border_width_px: 1
+  font_weight: 700
+  transition: "140ms ease"
+  icon_gap_px: 8
+
+sizes:
+  small:
+    min_height_px: 28
+    padding_x_px: 10
+    font_size_px: 9
+  medium:
+    min_height_px: 34
+    padding_x_px: 14
+    font_size_px: 10
+  large:
+    min_height_px: 42
+    padding_x_px: 18
+    font_size_px: 11
+
+variants:
+  primary:
+    background_token: accent
+    text_color: "#f7f6f2"
+    border_color: transparent
+    hover_background_token: accent_hover
+  secondary:
+    background_token: surface_soft
+    text_token: text
+    border_token: border
+    hover_background_token: surface_hover
+  ghost:
+    background: transparent
+    text_token: text_soft
+    border_token: border
+    hover_background_token: surface_hover
+  danger:
+    background: transparent
+    text_token: danger_text
+    border_color: "#dbc8c4"
+    hover_background_token: danger_soft
+
+agent_rules:
+  max_primary_buttons_per_view: 2
+  use_primary_for_main_action_only: true
+  do_not_add_extra_button_variants_without_approval: true
+  keep_button_labels_short: true

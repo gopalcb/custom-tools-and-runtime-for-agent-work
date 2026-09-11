@@ -1,0 +1,45 @@
+version: 1.0.0
+component: formgroup
+extends: ./root.yaml
+purpose: Composed field clusters for compact, regular, and expanded forms
+
+shell:
+  radius_px: 4
+  border:
+    width_px: 1
+    color_token: border
+  background: "rgba(255, 255, 255, 0.28)"
+  padding_px: 14
+  gap_px: 12
+
+sizes:
+  compact:
+    max_width_px: 280
+    intended_use:
+      - side panels
+      - quick editors
+  regular:
+    max_width_px: 420
+    intended_use:
+      - standard forms
+      - settings panels
+  expanded:
+    max_width: full
+    intended_use:
+      - detail editors
+      - structured content forms
+
+composition_rules:
+  label_above_control: true
+  field_gap_px: 6
+  row_gap_px: 10
+  two_column_split_allowed: true
+  helper_text_allowed: true
+  use_textbox_yaml_for_inputs: true
+  use_dropdown_yaml_for_dropdowns: true
+  use_checkbox_yaml_for_binary_choices: true
+
+agent_rules:
+  do_not_mix_more_than_two_columns_without_need: true
+  keep_formgroup_visually_quiet: true
+  prefer_expanded_form_only_when_content_requires_it: true

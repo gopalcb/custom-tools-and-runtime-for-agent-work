@@ -1,0 +1,50 @@
+version: 1.0.0
+component: textbox
+extends: ./root.yaml
+purpose: Text input and textarea controls
+
+shared:
+  radius_px: 4
+  border:
+    width_px: 1
+    color_token: border
+  background_token: surface_soft
+  text_token: text
+  focus:
+    border_token: accent
+    ring: "0 0 0 3px rgba(72, 103, 94, 0.08)"
+    background: "#f6f4ef"
+
+text_input_sizes:
+  small:
+    height_px: 30
+    padding_x_px: 10
+    font_size_px: 9
+  medium:
+    height_px: 36
+    padding_x_px: 11
+    font_size_px: 10
+  large:
+    height_px: 42
+    padding_x_px: 13
+    font_size_px: 11
+
+textarea:
+  min_height_px: 94
+  padding_px: 10
+  font_size_px: 10
+  line_height: 1.45
+  resize: vertical
+
+label:
+  font_size_px: 8
+  font_weight: 800
+  tracking_em: 0.08
+  text_transform: uppercase
+  color_token: text_soft
+  gap_below_px: 6
+
+agent_rules:
+  labels_should_be_visible_for_forms: true
+  placeholders_should_be_short_and_specific: true
+  do_not_use_heavy_inset_shadows: true

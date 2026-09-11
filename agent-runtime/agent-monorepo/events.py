@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import os
 import re
 from dataclasses import dataclass, field, replace
@@ -20,7 +21,9 @@ EVENT_TYPES = frozenset(
         "run.failed",
         "run.cancelled",
         "resolver.completed",
+        "health.checked",
         "workflow.started",
+        "workflow.resolved",
         "workflow.completed",
         "workflow.step.queued",
         "workflow.step.started",
@@ -38,6 +41,12 @@ EVENT_TYPES = frozenset(
         "tool.failed",
         "artifact.created",
         "file.changed",
+        "feedback.started",
+        "feedback.submitted",
+        "feedback.cancelled",
+        "feedback.analyzed",
+        "feedback.rework_requested",
+        "memory.updated",
         "background.started",
         "background.progress",
         "background.completed",
@@ -47,6 +56,7 @@ EVENT_TYPES = frozenset(
 )
 
 _SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
+logger = logging.getLogger(__name__)
 
 
 def utc_now() -> str:
@@ -120,6 +130,7 @@ class EventHub:
         self._subscribers: dict[
             asyncio.Queue[RuntimeEvent], tuple[str | None, str | None]
         ] = {}
+        logger.info("EventHub initialized", extra={"state_root": str(self.state_root)})
 
     @staticmethod
     def new_event(
@@ -156,6 +167,15 @@ class EventHub:
             emitted = replace(event, seq=next_seq)
             self._append(emitted)
             self._next_seq[key] = next_seq + 1
+            logger.info(
+                "Runtime event emitted",
+                extra={
+                    "event_type": emitted.type,
+                    "run_id": emitted.run_id,
+                    "session_id": emitted.session_id,
+                    "seq": emitted.seq,
+                },
+            )
             for queue, (run_filter, session_filter) in tuple(self._subscribers.items()):
                 if (run_filter is None or run_filter == emitted.run_id) and (
                     session_filter is None or session_filter == emitted.session_id
@@ -177,11 +197,16 @@ class EventHub:
             self._safe_id(session_id, "session_id")
         queue: asyncio.Queue[RuntimeEvent] = asyncio.Queue(maxsize=maxsize)
         self._subscribers[queue] = (run_id, session_id)
+        logger.info(
+            "Runtime event subscriber added",
+            extra={"run_id": run_id, "session_id": session_id},
+        )
         return queue
 
     def unsubscribe(self, queue: asyncio.Queue[RuntimeEvent]) -> None:
         """Remove a previously registered event subscription."""
         self._subscribers.pop(queue, None)
+        logger.info("Runtime event subscriber removed")
 
     def run_dir(self, session_id: str, run_id: str, *, create: bool = False) -> Path:
         session_id = self._safe_id(session_id, "session_id")

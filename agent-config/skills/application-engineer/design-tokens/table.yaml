@@ -1,0 +1,57 @@
+version: 1.0.0
+component: table
+extends: ./root.yaml
+purpose: Dense and standard data tables
+
+shell:
+  radius_px: 4
+  border:
+    width_px: 1
+    color_token: border
+  background: "rgba(248, 246, 241, 0.85)"
+  overflow: hidden
+
+table:
+  width: 100%
+  border_collapse: collapse
+
+header_row:
+  background: "rgba(236, 233, 226, 0.7)"
+  text:
+    font_size_px: 8
+    font_weight: 800
+    tracking_em: 0.08
+    text_transform: uppercase
+    color_token: text_soft
+
+cell:
+  divider:
+    width_px: 1
+    color: "rgba(216, 211, 201, 0.8)"
+  body_text_color_token: text
+  hover_row_background: "rgba(220, 230, 225, 0.24)"
+
+sizes:
+  small:
+    cell_padding: "8px 10px"
+    font_size_px: 8
+  medium:
+    cell_padding: "10px 12px"
+    font_size_px: 9
+  large:
+    cell_padding: "12px 14px"
+    font_size_px: 10
+
+tags:
+  radius_px: 4
+  min_height_px: 20
+  padding_x_px: 7
+  background_token: accent_soft
+  text_token: accent_hover
+  font_size_px: 8
+  font_weight: 700
+
+agent_rules:
+  prefer_table_for_comparable_records: true
+  avoid_more_than_five_columns_on_mobile_mockups: true
+  keep_header_labels_short: true

@@ -1,0 +1,44 @@
+version: 1.0.0
+component: footer
+extends: ./root.yaml
+purpose: Optional quiet application footer for metadata, secondary actions, or legal text
+
+structure:
+  layout:
+    display: flex
+    align_items: center
+    justify_content: space-between
+    gap_px: 12
+    min_height_px: 48
+    padding_desktop: "12px 18px"
+    padding_mobile: "10px 12px"
+    flex_wrap_mobile: wrap
+
+surface:
+  background: "rgba(248, 246, 241, 0.92)"
+  border_top:
+    width_px: 1
+    color_token: border
+  radius_px: 0
+
+typography:
+  primary_copy_px: 9
+  secondary_copy_px: 8
+  primary_color_token: text_soft
+  secondary_color_token: text_faint
+
+usage_patterns:
+  allowed_content:
+    - save state
+    - helper metadata
+    - last updated timestamp
+    - small secondary action group
+  avoid_content:
+    - dense navigation menus
+    - promotional banners
+    - large call to action blocks
+
+agent_rules:
+  footer_is_optional: true
+  if_present_keep_low_emphasis: true
+  do_not_use_sticky_footer_without_need: true

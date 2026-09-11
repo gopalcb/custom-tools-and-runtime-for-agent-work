@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
 import { ApplicationLogService } from './application-log.service';
 import { ApplicationLogsController } from './application-logs.controller';
-import { CodexApiClientService } from './codex-api-client.service';
-import { CodexController } from './codex.controller';
-import { CodexEventsGateway } from './codex-events.gateway';
+import { ControllerController } from './controller.controller';
+import { MonorepoDataService } from './monorepo-data.service';
+import { TaskRunnerService } from './task-runner.service';
 
 @Module({
-  controllers: [CodexController, ApplicationLogsController],
-  providers: [ApplicationLogService, CodexApiClientService, CodexEventsGateway],
+  controllers: [ControllerController, ApplicationLogsController],
+  providers: [ApplicationLogService, MonorepoDataService, TaskRunnerService],
 })
 export class AppModule {}

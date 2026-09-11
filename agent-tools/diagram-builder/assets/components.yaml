@@ -1,0 +1,37 @@
+components:
+  label-upper:
+    class: db-label db-label--upper
+    description: Uppercase stage label for prompts, phases, and system milestones.
+  label-normal:
+    class: db-label db-label--normal
+    description: Standard centered label for process nodes.
+  label-lower:
+    class: db-label db-label--lower
+    description: Lower-emphasis label for concrete agents, files, and leaf targets.
+  down-arrow:
+    class: db-connector db-connector--down
+    description: Vertical connector with a downward arrowhead.
+  down-arrow-with-right-branches:
+    class: db-connector db-connector--branch-right
+    description: Vertical connector with right-side branch rows and a downward arrowhead.
+  tree-root:
+    class: db-tree__root
+    description: Root label for a repository or nested tree diagram.
+  tree-file:
+    class: db-tree__file
+    description: Leaf file entry in a tree diagram.
+  tree-folder:
+    class: db-tree__folder
+    description: Folder entry in a tree diagram.
+  bus-source:
+    class: db-bus__source
+    description: Source event node feeding a shared event hub.
+  bus-hub:
+    class: db-bus__hub
+    description: Central event hub node.
+  bus-output:
+    class: db-bus__output
+    description: Output artifact or subscriber node.
+  bus-artifact:
+    class: db-bus__artifact
+    description: Post-completion artifact node.

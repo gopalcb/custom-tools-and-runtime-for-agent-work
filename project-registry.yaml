@@ -1,20 +1,21 @@
 version: 1
 
 paths:
-  agents: agents
+  agents: agent-config/agents
+  skills: agent-config/skills
   workflows: agent-runtime/agent-monorepo/workflows/workflow-orchestrator.yaml
   workflow_steps: agent-runtime/agent-monorepo/workflows/workflow-steps.yaml
   state: .agent-state
   messaging: .agent-state/agents-messaging
 
 runtime:
-  default_agent: codex-agent
-  default_workflow: codex-smoke
-  max_parallel_tasks: 3
+  default_agent: agent-monorepo
+  default_workflow: default
+  max_parallel_tasks: 5
 
 codex:
   command: codex app-server
-  supported_cli: ">=0.153.4,<0.154.0"
+  supported_cli: ">=0.153.4,<0.155.0"
   working_directory: .
   approval_policy: never
   sandbox: workspace-write
@@ -23,14 +24,21 @@ codex:
     - .
 
 model_profiles:
-  standard: null
+  standard:
+    model: gpt-5.5
+    effort: medium
 
 memory:
   enabled: true
+  retrieval: true
   semantic_retrieval: false
-  extraction: false
+  extraction: true
+  strategy_feedback:
+    enabled: true
+    max_rework_cycles: 3
+    feedback_timeout_seconds: 600
 
 validation:
-  typecheck: python -m compileall agent-runtime agent-gateway
-  tests: python -m pytest
-  agent: 'python -c "from agent_monorepo.registry import Registry; Registry(''.'')"'
+  typecheck: .venv/bin/python -m compileall agent-runtime/agent-monorepo agent-gateway agent-tools/internal-messaging agent-tools/ui-debugger agent-tools/strategy-feedback agent-config/agents/agent-implementation-planner agent-config/agents/agent-logs-analyzer
+  tests: .venv/bin/python -m pytest -q
+  agent: '.venv/bin/python -c "from agent_monorepo.registry import Registry; Registry(''.'')"'

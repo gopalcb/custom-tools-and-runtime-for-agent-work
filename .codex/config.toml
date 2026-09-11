@@ -1,0 +1,27 @@
+#:schema https://developers.openai.com/codex/config-schema.json
+
+# Native Codex CLI defaults for this trusted monorepo.
+model = "gpt-5.5"
+model_reasoning_effort = "medium"
+model_verbosity = "low"
+model_reasoning_summary = "concise"
+
+approval_policy = "never"
+sandbox_mode = "workspace-write"
+tool_output_token_limit = 8000
+
+skills.max_context_tokens = 4000
+
+model_auto_compact_token_limit = 200000
+model_auto_compact_token_limit_scope = "total"
+
+[sandbox_workspace_write]
+network_access = true
+writable_roots = ["."]
+
+[agents]
+enabled = true
+max_concurrent_threads_per_session = 2
+default_subagent_model = "gpt-5.5"
+default_subagent_reasoning_effort = "medium"
+interrupt_message = false

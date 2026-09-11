@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 from collections import defaultdict
 from dataclasses import dataclass
@@ -12,6 +13,9 @@ from typing import Any, Iterable, Mapping
 
 from .events import EventHub, RuntimeEvent, terminal_event
 from .memory.service import MemoryService
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -33,6 +37,10 @@ def finalize_run(
     events = event_hub.load_run(run_id, session_id)
     if not events:
         raise ValueError(f"Cannot finalize run {run_id!r}: no persisted events.")
+    logger.info(
+        "Finalizing run artifacts",
+        extra={"run_id": run_id, "session_id": session_id, "event_count": len(events)},
+    )
     run_dir = event_hub.run_dir(session_id, run_id, create=True)
     run_data = _run_metadata(events)
     metrics = _metrics(events)
@@ -51,6 +59,10 @@ def finalize_run(
     _write_json(paths.metrics, metrics)
     _write_json(paths.artifacts, artifacts)
     _write_json(paths.memory_candidates, candidates)
+    logger.info(
+        "Run artifacts finalized",
+        extra={"run_id": run_id, "session_id": session_id, "run_dir": str(run_dir)},
+    )
     return paths
 
 

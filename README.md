@@ -1,10 +1,13 @@
 # Codex Agent Monorepo
 
-This repository is a compact local control plane for specialized coding agents. A deterministic resolver selects a declarative agent and workflow; the Python runtime drives Codex App Server through structured JSONL; and one event stream updates durable run history and gateway consumers.
+This repository is a compact local control plane for specialized coding
+agents. The native Codex CLI remains the default terminal experience; the
+shared Python runtime is available for App Server-backed workflows, durable
+events, finalization artifacts, local work memory, and gateway consumers.
 
 The design keeps each source of truth easy to find:
 
-- agent identity and capabilities live in `agents/*/agent.yaml`;
+- agent identity and capabilities live in `agent-config/agents/*/agent.yaml`;
 - agent behavior lives beside it in `instructions.md`;
 - orchestration lives with the shared runtime in
   `agent-runtime/agent-monorepo/workflows/`, composed from its reusable step
@@ -47,24 +50,38 @@ Codex notifications are normalized at the runtime boundary. Gateway consumers an
 ```text
 .
 ├── project-registry.yaml                 # Global paths, limits, Codex policy, feature flags
-├── pyproject.toml                        # One Python package and CLI commands
+├── pyproject.toml                        # Python package wiring and CLI commands
 ├── AGENTS.md                             # Repository guidance for coding agents
-├── TASKS.md                              # Implemented specification and validation ledger
 │
-├── agents/                               # Declarative agent definitions
-│   ├── agent-builder/
-│   │   ├── agent.yaml                    # Routing, workflow, skills, tools, model profile
-│   │   └── instructions.md               # How to create and validate new agents
-│   ├── agent-ui-builder/
-│   │   ├── agent.yaml
-│   │   └── instructions.md               # Lightweight HTML/CSS/JS mockup behavior
-│   ├── agent-implementation-planner/
-│   │   ├── agent.yaml
-│   │   ├── instructions.md               # Read-only implementation planning contract
-│   │   ├── planner.py                    # Standalone structured planner CLI
-│   │   ├── validation.py
-│   │   └── plan.schema.json
-│   └── skills/                           # Reusable instruction files selected by the resolver
+├── agent-config/                         # Declarative agent configuration
+│   ├── context/
+│   │   └── monorepo-architecture.md      # Compact agent-facing architecture map
+│   ├── skills/                           # Reusable instruction files selected by the resolver
+│   └── agents/                           # Declarative agent definitions
+│       ├── agent-monorepo/
+│       │   ├── agent.yaml                # Default project specialist
+│       │   └── instructions.md
+│       ├── agent-builder/
+│       │   ├── agent.yaml                # Routing, workflow, skills, tools, model profile
+│       │   └── instructions.md           # How to create and validate new agents
+│       ├── agent-ui-builder/
+│       │   ├── agent.yaml
+│       │   └── instructions.md           # Lightweight HTML/CSS/JS mockup behavior
+│       ├── agent-ui-debugger/
+│       │   ├── agent.yaml
+│       │   └── instructions.md
+│       ├── agent-implementation-planner/
+│       │   ├── agent.yaml
+│       │   ├── instructions.md           # Read-only implementation planning contract
+│       │   ├── planner.py                # Standalone structured planner CLI
+│       │   ├── validation.py
+│       │   └── plan.schema.json
+│       ├── agent-logs-analyzer/
+│       │   ├── agent.yaml
+│       │   └── instructions.md
+│       └── codex-agent/
+│           ├── agent.yaml                # Generic fallback selected by /codex-agent
+│           └── instructions.md
 │
 ├── agent-gateway/
 │   └── gateway.py                        # Thin public run/resume/cancel/approval facade
@@ -98,9 +115,8 @@ Codex notifications are normalized at the runtime boundary. Gateway consumers an
 │   ├── logs/<session>/<run>/             # events.jsonl and derived run artifacts
 │   └── sessions/<session>/session.json   # Resume metadata and Codex thread ID
 │
-├── tests/                                # Resolver, workflow, events, protocol, integration
-└── docs/mockups/
-    └── codex-agent-console-ui-mockup.html # Original visual design reference
+├── docs/                                 # Design notes, memory plans, improvement backlog
+└── tests/                                # Resolver, workflow, events, protocol, integration
 ```
 
 The gateway stays small so another interface can wrap the same runtime later. Interfaces send user actions through the gateway; they do not route agents, interpret workflows, poll log files, or calculate final metrics.
@@ -110,7 +126,8 @@ send and inspect messages; records are stored in `.agent-state/agents-messaging`
 
 ## Requirements and setup
 
-Use Python 3.10 or newer and a Codex CLI compatible with the configured App Server range. This version is tested with `codex-cli 0.153.4` and accepts `>=0.153.4,<0.154.0`.
+Use Python 3.10 or newer and a Codex CLI compatible with the configured App
+Server range. The current registry accepts `>=0.153.4,<0.155.0`.
 
 ```bash
 python3 -m venv .venv
@@ -120,8 +137,7 @@ codex --version
 ```
 
 The browser controller is maintained under `agent-runtime/monorepo-controller`.
-Run its SDK API, debugger API, Nest backend, and Angular frontend as described
-in that project's README:
+Run its Nest backend and Angular frontend as described in that project's README:
 
 ```bash
 cd agent-runtime/monorepo-controller
@@ -135,7 +151,7 @@ The implementation planner can also be run directly without changing the
 repository:
 
 ```bash
-python agents/agent-implementation-planner/planner.py \
+python agent-config/agents/agent-implementation-planner/planner.py \
   "Plan the requested repository change" --repo . --dry-run
 ```
 
@@ -171,14 +187,17 @@ Each run writes continuously to:
 
 `events.jsonl` is the append-only factual record. Finalization derives every other file from those events. `artifacts.json` indexes `artifact.created` events, while session metadata retains the Codex thread ID needed by `--resume`.
 
-Memory is progressive. Lexical retrieval is available behind policy flags; semantic retrieval and extraction remain disabled until a real need justifies embeddings, stores, and ingestion implementations. A completed run never triggers an extra model call merely to create memory.
+Memory is progressive. Deterministic extraction and local lexical retrieval are
+enabled in `project-registry.yaml`; semantic retrieval remains disabled until a
+real need justifies embeddings, stores, and ingestion implementations. A
+completed run never triggers an extra model call merely to create memory.
 
 ## Adding an agent or workflow
 
 Create an agent with two files:
 
 ```text
-agents/<agent-id>/
+agent-config/agents/<agent-id>/
 ├── agent.yaml
 └── instructions.md
 ```
@@ -197,9 +216,8 @@ planning workflow so execution remains bounded to the approved plan.
 Run the complete offline suite and import checks with:
 
 ```bash
-python -m pytest -q
-python -m compileall -q agent-gateway agent-runtime tests
-python -m pip check
+.venv/bin/python -m compileall agent-runtime/agent-monorepo agent-gateway agent-tools/internal-messaging agent-tools/ui-debugger agent-config/agents/agent-implementation-planner agent-config/agents/agent-logs-analyzer
+.venv/bin/python -m pytest -q
 ```
 
 The tests inject fake Codex transports, so normal verification does not need network access or a model turn. They cover routing, workflow dependencies and concurrency, event durability, finalization, protocol normalization, approvals, resume, failure, and cancellation. A bounded live smoke check can validate the App Server initialize handshake without starting a model turn.

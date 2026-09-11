@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass, field
+import logging
 from pathlib import Path
 import re
 from typing import Any, Iterable, Mapping, Sequence
@@ -84,10 +85,29 @@ _PLANNING = re.compile(
     r"across|end[- ]to[- ]end|multiple (?:modules|packages|services|subsystems))\b",
     re.IGNORECASE,
 )
+_SKIP_PLANNING = re.compile(
+    r"\b(?:skip|without|no|do not|don't)\b.{0,24}\b(?:planning|planner|plan workflow|workflow-selection)\b|"
+    r"\b(?:planning|planner|plan workflow|workflow-selection)\b.{0,24}\b(?:skip|off|disabled)\b",
+    re.IGNORECASE,
+)
 _TRIVIAL = re.compile(
     r"\b(?:typo|spelling|rename|one[- ]line|single (?:line|file)|explain|show|list)\b",
     re.IGNORECASE,
 )
+_DIAG_BUILDER_PREFIX = re.compile(r"^\s*/diag-builder(?:\s|$)", re.IGNORECASE)
+_DIAGRAM_HTML_REQUEST = re.compile(
+    r"\b(?:(?:use|using)\s+diagram\s+builder|(?:create|build|render|generate|make)\s+"
+    r"(?:an?\s+)?(?:html\s+)?(?:architecture\s+|runtime\s+|flow\s+|tree\s+)?diagram|"
+    r"diagram\s+(?:as|in|to)\s+(?:html|html file)|html\s+diagram)\b",
+    re.IGNORECASE,
+)
+_MARKDOWN_DOCUMENT_REQUEST = re.compile(
+    r"(?:\b(?:markdown|md)\b|\.md\b|README\.md\b|"
+    r"\b(?:save|write|store|create)\b.{0,40}\b(?:document|article|post|file)\b.{0,20}\b(?:markdown|md)\b|"
+    r"\b(?:save|write|store|create)\b.{0,40}\.md\b)",
+    re.IGNORECASE,
+)
+logger = logging.getLogger(__name__)
 
 
 class Resolver:
@@ -116,6 +136,7 @@ class Resolver:
         needs_ui = self._needs_ui(prompt)
         needs_web = self._needs_web_search(prompt)
         needs_planning = self._needs_planning(prompt, selected, workflow)
+        skip_planning = self.skips_planning(prompt)
         if workflow_id is None and needs_planning and selected_workflow == "codex-smoke":
             selected_workflow = "default"
             try:
@@ -139,14 +160,26 @@ class Resolver:
             "needs_planning": needs_planning,
             "needs_web_search": needs_web,
             "needs_ui": needs_ui,
+            "skip_planning": skip_planning,
         }
         planning_workflow_id: str | None = None
-        try:
-            planning_workflow = self.registry.get_workflow("workflow-selection")
-            if planning_workflow.get("phase") == "planning":
-                planning_workflow_id = "workflow-selection"
-        except RegistryError:
-            pass
+        if not skip_planning:
+            try:
+                planning_workflow = self.registry.get_workflow("workflow-selection")
+                if planning_workflow.get("phase") == "planning":
+                    planning_workflow_id = "workflow-selection"
+            except RegistryError:
+                pass
+        logger.info(
+            "Prompt resolved",
+            extra={
+                "agent_id": selected.id,
+                "workflow_id": selected_workflow,
+                "needs_planning": needs_planning,
+                "needs_web_search": needs_web,
+                "needs_ui": needs_ui,
+            },
+        )
         return ResolvedRunSpec(
             agent_id=selected.id,
             workflow_id=selected_workflow,
@@ -170,10 +203,17 @@ class Resolver:
                 raise ResolutionError(str(exc)) from exc
 
         normalized = " ".join(prompt.casefold().split())
+        markdown_document = self._is_markdown_document_request(prompt)
+        if self._needs_html_diagram(prompt):
+            return self._required_agent("diagram-builder", "HTML diagram request")
         for agent in agents:
+            if markdown_document and agent.id == "diagram-builder":
+                continue
             if _contains_phrase(normalized, agent.id.casefold()):
                 return agent
         for agent in agents:
+            if markdown_document and agent.id == "diagram-builder":
+                continue
             aliases = (agent.name, *agent.aliases)
             if agent.id == "agent-implementation-planner" and not normalized.startswith(
                 ("planner", "plan work", "implementation planner")
@@ -260,6 +300,23 @@ class Resolver:
         )
         return action_count >= 2 and subsystem_count >= 2
 
+    @staticmethod
+    def skips_planning(prompt: str) -> bool:
+        """Return whether the user explicitly asked to bypass planning."""
+        return bool(_SKIP_PLANNING.search(prompt))
+
+    @staticmethod
+    def _needs_html_diagram(prompt: str) -> bool:
+        """Return whether the prompt should route to the HTML diagram builder."""
+        if Resolver._is_markdown_document_request(prompt):
+            return False
+        return bool(_DIAG_BUILDER_PREFIX.search(prompt) or _DIAGRAM_HTML_REQUEST.search(prompt))
+
+    @staticmethod
+    def _is_markdown_document_request(prompt: str) -> bool:
+        """Return whether the prompt asks for a Markdown document artifact."""
+        return bool(_MARKDOWN_DOCUMENT_REQUEST.search(prompt))
+
     def _validation_commands(self, workflow_id: str) -> list[str]:
         validation = self.registry.project_config.get("validation", {})
         if not isinstance(validation, dict):
@@ -330,7 +387,7 @@ async def collect_project_context(
     max_file_bytes: int = 512_000,
 ) -> list[ContextItem]:
     """Search allowed repository roots without crossing the project boundary."""
-    return await asyncio.to_thread(
+    items = await asyncio.to_thread(
         _collect_project_context,
         Path(project_root),
         tuple(queries),
@@ -339,6 +396,11 @@ async def collect_project_context(
         max_chars,
         max_file_bytes,
     )
+    logger.info(
+        "Project context collected",
+        extra={"project_root": str(project_root), "query_count": len(queries), "file_count": len(items)},
+    )
+    return items
 
 
 def compact_context(
@@ -390,8 +452,15 @@ def _collect_project_context(
         return []
 
     defaults: tuple[str, ...] = (
-        "agent-runtime", "agent-gateway", "tests", "agents", "workflows",
-        "project-registry.yaml", "pyproject.toml", "docs",
+        "agent-config/context",
+        "agent-config/agents",
+        "agent-config/skills",
+        "agent-runtime",
+        "agent-gateway",
+        "tests",
+        "project-registry.yaml",
+        "pyproject.toml",
+        "docs",
     )
     roots = configured_roots or defaults
     allowed: list[Path] = []
@@ -473,6 +542,10 @@ def _collect_project_context(
             )
         )
         used += len(content)
+    logger.info(
+        "Project context scan completed",
+        extra={"scanned": scanned, "candidates": len(candidates), "selected": len(selected)},
+    )
     return selected
 
 
@@ -502,7 +575,7 @@ def _source_priority(relative_path: str) -> int:
         return 0
     if "memory" in parts:
         return 3
-    if parts[0] in {"agents", "workflows"}:
+    if parts[0] == "agent-config":
         return 1
     if parts[0] == "docs" or "architecture" in Path(relative_path).name.casefold():
         return 2

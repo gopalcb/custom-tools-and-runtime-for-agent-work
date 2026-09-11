@@ -2,6 +2,13 @@ version: 1
 
 # Reusable step catalog. workflow-orchestrator.yaml composes these steps by ref.
 steps:
+  pre-work-health:
+    id: pre-work-health
+    name: Check monorepo system health
+    uses: hook
+    hook: pre_work_health_check
+    timeout: 60
+
   analyze:
     id: analyze
     name: Analyze user query
@@ -63,6 +70,13 @@ steps:
         name: Run tests
         uses: shell
         command: $validation.tests
+
+  store-strategy-memory:
+    id: store-strategy-memory
+    name: Collect feedback and update strategy memory
+    uses: hook
+    hook: strategy_memory_feedback
+    timeout: 900
 
   finalize:
     id: finalize

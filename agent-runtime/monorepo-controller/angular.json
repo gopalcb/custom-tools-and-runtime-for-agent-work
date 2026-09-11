@@ -24,6 +24,7 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": { "host": "localhost", "port": 1001 },
           "configurations": {
             "production": { "buildTarget": "monorepo-controller:build:production" },
             "development": { "buildTarget": "monorepo-controller:build:development" }

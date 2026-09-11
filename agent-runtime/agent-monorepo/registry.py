@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass
+import logging
 from pathlib import Path
 import re
 from typing import Any, Mapping
@@ -15,6 +16,7 @@ from .workflows.workflow_resolver import WorkflowConfigurationError, resolve_ste
 
 _IDENTIFIER = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 _STEP_USES = frozenset({"agent", "tool", "shell", "hook", "parallel"})
+logger = logging.getLogger(__name__)
 
 
 class RegistryError(ValueError):
@@ -53,6 +55,7 @@ class Registry:
         self._workflows: dict[str, dict[str, Any]] = {}
         self._workflow_steps: dict[str, dict[str, Any]] = {}
         self._skill_cache: dict[str, Path] = {}
+        logger.info("Registry initializing", extra={"project_root": str(self.project_root)})
         self.reload()
 
     @property
@@ -89,7 +92,9 @@ class Registry:
         self._validate_version(config["version"], "project registry")
         paths = self._mapping(config["paths"], "project registry paths")
 
-        agents_root = self._configured_path(paths, "agents", "agents", expect="directory")
+        agents_root = self._configured_path(
+            paths, "agents", "agent-config/agents", expect="directory"
+        )
         workflows_path = self._configured_path(
             paths,
             "workflows",
@@ -135,6 +140,14 @@ class Registry:
         self._workflow_steps = workflow_steps
         self._agents = agents
         self._skill_cache = skill_cache
+        logger.info(
+            "Registry reloaded",
+            extra={
+                "agents": len(agents),
+                "workflows": len(workflows),
+                "workflow_steps": len(workflow_steps),
+            },
+        )
 
     def get_agent(self, agent_id: str) -> AgentDefinition:
         try:
@@ -145,6 +158,37 @@ class Registry:
 
     def list_agents(self) -> list[AgentDefinition]:
         return [self._agents[agent_id] for agent_id in sorted(self._agents)]
+
+    def codex_options_for_profile(self, profile: str | None) -> dict[str, str | None]:
+        """Return Codex model options configured for an agent profile."""
+        if profile is None:
+            return {"model": None, "effort": None}
+        profiles = self._project_config.get("model_profiles", {})
+        if not isinstance(profiles, dict) or profile not in profiles:
+            raise ValueError(f"Unknown model profile: {profile}")
+        configured = profiles[profile]
+        if configured is None:
+            return {"model": None, "effort": None}
+        if isinstance(configured, str):
+            return {"model": configured, "effort": None}
+        if not isinstance(configured, dict):
+            raise ValueError(f"Invalid model profile: {profile}")
+
+        model = configured.get("model")
+        effort = configured.get("effort", configured.get("capacity"))
+        if model in {None, ""}:
+            model_option = None
+        elif isinstance(model, str):
+            model_option = model
+        else:
+            raise ValueError(f"Invalid model profile model: {profile}")
+        if effort in {None, ""}:
+            effort_option = None
+        elif isinstance(effort, str):
+            effort_option = effort
+        else:
+            raise ValueError(f"Invalid model profile effort: {profile}")
+        return {"model": model_option, "effort": effort_option}
 
     def get_workflow(self, workflow_id: str) -> dict[str, Any]:
         try:
@@ -194,7 +238,7 @@ class Registry:
         return self._configured_path(paths, key, "", expect="file")
 
     def _skill_roots(self, paths: Mapping[str, Any], agents_root: Path) -> tuple[Path, ...]:
-        configured = paths.get("skills", agents_root / "skills")
+        configured = paths.get("skills", agents_root.parent / "skills")
         values = configured if isinstance(configured, list) else [configured]
         if not values or any(not isinstance(value, (str, Path)) for value in values):
             raise RegistryError("paths.skills must be a path or a non-empty list of paths")

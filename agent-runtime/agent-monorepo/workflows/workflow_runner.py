@@ -7,6 +7,7 @@ this module owns retries, cancellation, dispatch, parallel work, and events.
 from __future__ import annotations
 
 import asyncio
+import logging
 from collections.abc import Awaitable, Mapping
 from typing import Any
 
@@ -29,6 +30,9 @@ from .workflow_resolver import (
 )
 
 
+logger = logging.getLogger(__name__)
+
+
 class WorkflowEngine:
     """Execute ordered workflow steps with small, bounded parallel groups."""
 
@@ -40,6 +44,7 @@ class WorkflowEngine:
             raise ValueError("max_parallel_tasks must be positive")
         self.events = events
         self.max_parallel_tasks = max_parallel_tasks
+        logger.info("WorkflowEngine initialized", extra={"max_parallel_tasks": max_parallel_tasks})
 
     async def execute(
         self,
@@ -54,6 +59,7 @@ class WorkflowEngine:
         validate_steps(steps)
         result = WorkflowResult(status="running")
         await self.emit("workflow.started", context, status="running")
+        logger.info("Workflow execution started", extra={"run_id": context.run_id})
         for step in steps:
             await self.emit(
                 "workflow.step.queued",
@@ -89,12 +95,18 @@ class WorkflowEngine:
                 result.steps[step_id] = "completed"
             result.status = "completed"
             await self.emit("workflow.completed", context, status="completed")
+            logger.info("Workflow execution completed", extra={"run_id": context.run_id})
             return result
         except (asyncio.CancelledError, WorkflowCancelled):
             result.status = "cancelled"
+            logger.info("Workflow execution cancelled", extra={"run_id": context.run_id})
             raise
-        except Exception:
+        except Exception as error:
             result.status = "failed"
+            logger.warning(
+                "Workflow execution failed",
+                extra={"run_id": context.run_id, "exception": type(error).__name__},
+            )
             raise
 
     async def run_step(
@@ -114,6 +126,10 @@ class WorkflowEngine:
                 message=step.get("name"),
                 payload={"attempt": attempt, "max_attempts": attempts},
             )
+            logger.info(
+                "Workflow step started",
+                extra={"run_id": context.run_id, "step_id": step_id, "attempt": attempt},
+            )
             try:
                 output = await self.await_operation(
                     self.dispatch(step, context, handlers), context, step_timeout
@@ -126,10 +142,27 @@ class WorkflowEngine:
                     message=step.get("name"),
                     payload={"attempt": attempt},
                 )
+                logger.info(
+                    "Workflow step completed",
+                    extra={"run_id": context.run_id, "step_id": step_id, "attempt": attempt},
+                )
                 return output
             except asyncio.CancelledError:
                 raise
             except Exception as error:
+                will_retry = attempt < attempts and retryable(error)
+                logger.log(
+                    logging.INFO if will_retry else logging.WARNING,
+                    "Workflow step failed",
+                    extra={
+                        "run_id": context.run_id,
+                        "step_id": step_id,
+                        "attempt": attempt,
+                        "max_attempts": attempts,
+                        "exception": type(error).__name__,
+                        "will_retry": will_retry,
+                    },
+                )
                 await self.emit(
                     "workflow.step.failed",
                     context,
@@ -142,7 +175,7 @@ class WorkflowEngine:
                         "exception": type(error).__name__,
                     },
                 )
-                if attempt >= attempts or not retryable(error):
+                if not will_retry:
                     raise
         raise AssertionError("retry loop exited unexpectedly")
 
@@ -259,6 +292,10 @@ class WorkflowEngine:
             child_tasks.append(child_task)
             if isinstance(registry, dict):
                 registry[task_id] = child_task
+        logger.info(
+            "Parallel workflow group started",
+            extra={"run_id": context.run_id, "step_id": step["id"], "task_count": len(child_tasks)},
+        )
         try:
             return dict(await asyncio.gather(*child_tasks))
         finally:
@@ -266,6 +303,10 @@ class WorkflowEngine:
                 if not child_task.done():
                     child_task.cancel()
             await asyncio.gather(*child_tasks, return_exceptions=True)
+            logger.info(
+                "Parallel workflow group finalized",
+                extra={"run_id": context.run_id, "step_id": step["id"]},
+            )
 
     async def emit(
         self,

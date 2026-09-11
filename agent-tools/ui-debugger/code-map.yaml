@@ -1,42 +1,45 @@
-project: interactive-web-search
+project: ui-debugger
 files:
-  api.py:
-    purpose: Proxy Codex SDK API routes for debugger and controller clients.
+  ui_debugger/__init__.py:
+    purpose: Export the UI debugger runner contracts.
+    functions: {}
+  ui_debugger/cli.py:
+    purpose: Command-line entry point for one Selenium UI debug run.
     functions:
-      create_app:
-        summary: Build the debugger-facing Codex SDK proxy API.
       main:
-        summary: Run the local debugger API proxy.
-    classes:
-      CodexDebuggerApi:
-        functions:
-          __init__:
-            summary: Configure the downstream Codex SDK API URL.
-          request_json:
-            summary: Call a JSON SDK endpoint.
-          stream_turn:
-            summary: Stream raw SDK event-log lines for one turn.
-  cli.py:
-    purpose: Python module in the project.
+        summary: Parse CLI arguments, run the debugger, and print JSON output.
+  ui_debugger/runner.py:
+    purpose: Open a UI URL with Selenium and persist console, network, and screenshot artifacts.
     functions:
-      load_config:
-      parse_args:
-      main:
-  services/browser.py:
-    purpose: Python module in the project.
-    functions:
-      _setting:
-      _visible_element:
-      _find_prompt_input:
-      _submit_prompt:
-      start_search:
-  services/extractor.py:
-    purpose: Python module in the project.
-    functions:
-      extract_assistant_messages:
-      wait_for_complete_response:
-      save_markdown:
-  services/validation.py:
-    purpose: Python module in the project.
-    functions:
-      validate_payload:
+      DebugRequest.from_dict:
+        summary: Validate and normalize a message payload into a debug request.
+      DebugResult.to_dict:
+        summary: Convert a debugger result to a JSON-serializable dictionary.
+      run_debug_request:
+        summary: Execute one browser debug request and write a manifest.
+      build_artifact_dir:
+        summary: Resolve the artifact directory for a request.
+      open_driver:
+        summary: Create a Chrome WebDriver configured for browser and performance logs.
+      wait_for_page:
+        summary: Wait for document readiness and the configured settling time.
+      collect_browser_logs:
+        summary: Read browser console logs and split error-level entries.
+      collect_network_errors:
+        summary: Parse Chrome performance logs and return actual failed fetch/XHR requests.
+      capture_screenshot:
+        summary: Save a viewport or full-page PNG screenshot.
+      close_driver:
+        summary: Close a WebDriver session while preserving the main result.
+      write_result_files:
+        summary: Persist console logs, network errors, and the manifest JSON.
+      safe_fragment:
+        summary: Convert user-provided ids into safe path fragments.
+      utc_now_iso:
+        summary: Return the current UTC timestamp in ISO 8601 form.
+      error_text:
+        summary: Render an exception or unknown value as text.
+      numeric:
+        summary: Normalize numeric payload values with bounds.
+      boolean:
+        summary: Normalize boolean-like payload values.
