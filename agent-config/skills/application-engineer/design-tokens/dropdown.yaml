@@ -1,0 +1,98 @@
+version: 1.0.0
+component: dropdown
+extends: ./root.yaml
+purpose: Controlled custom dropdown used in theme-library examples
+
+pattern:
+  type: custom_dropdown
+  rationale: >
+    Use a custom dropdown pattern when visual control over selected-state checkmarks
+    and option alignment matters. Do not rely on browser-native option menu styling
+    when the generated UI must match the theme precisely.
+
+trigger:
+  shape:
+    radius_px: 4
+    border:
+      width_px: 1
+      color_token: border
+    background: "linear-gradient(180deg, rgba(255, 255, 255, 0.46), rgba(236, 233, 226, 0.92)), #ece9e2"
+  text:
+    color_token: text
+  right_side:
+    divider_right_offset_px: 34
+    caret_right_px: 14
+    caret_size_px: 8
+    caret_stroke_px: 1.5
+  hover:
+    border_token: border_strong
+    background: "linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(229, 225, 216, 0.96)), #e5e1d8"
+  focus:
+    border_token: accent
+    ring: "0 0 0 3px rgba(72, 103, 94, 0.08)"
+
+menu:
+  offset_top_px: 4
+  padding_px: 4
+  gap_px: 2
+  radius_px: 4
+  border:
+    width_px: 1
+    color_token: border_strong
+  background: "rgba(248, 246, 241, 0.98)"
+  shadow_token: dropdown
+
+option:
+  layout:
+    display: flex
+    align_items: center
+    gap_px: 8
+  radius_px: 4
+  selected_background: "rgba(220, 230, 225, 0.52)"
+  selected_text_token: accent_hover
+  hover_background_token: surface_hover
+  checkmark:
+    glyph: "✓"
+    color_token: accent
+    line_height: 1
+    alignment_strategy: fixed_width_slot
+  label:
+    line_height: 1.2
+
+sizes:
+  small:
+    trigger_height_px: 30
+    trigger_padding_x_px: 10
+    trigger_font_size_px: 9
+    option_min_height_px: 28
+    option_padding: "5px 8px"
+    option_font_size_px: 9
+    checkmark_font_size_px: 10
+    checkmark_slot_px: 12
+    checkmark_offset_y_px: -0.5
+  medium:
+    trigger_height_px: 36
+    trigger_padding_x_px: 11
+    trigger_font_size_px: 10
+    option_min_height_px: 34
+    option_padding: "7px 9px"
+    option_font_size_px: 10
+    checkmark_font_size_px: 11
+    checkmark_slot_px: 14
+    checkmark_offset_y_px: -0.5
+  large:
+    trigger_height_px: 42
+    trigger_padding_x_px: 13
+    trigger_font_size_px: 11
+    option_min_height_px: 40
+    option_padding: "8px 10px"
+    option_font_size_px: 11
+    checkmark_font_size_px: 12
+    checkmark_slot_px: 16
+    checkmark_offset_y_px: -1
+
+agent_rules:
+  if_exact_visual_control_is_needed_use_custom_dropdown: true
+  selected_option_must_keep_fixed_checkmark_slot: true
+  do_not_center_checkmark_by_guess: true
+  keep_option_text_single_line_when_possible: true

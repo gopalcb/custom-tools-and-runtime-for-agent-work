@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { appendFile, mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { ApplicationLogLevel, RuntimeLogRequest } from './contracts';
+import { findProjectRoot, safeJoin } from './project-paths';
 
 const LOG_LEVELS = new Set<ApplicationLogLevel>(['DEBUG', 'INFO', 'WARN', 'ERROR']);
 const DEFAULT_SOURCE = 'monorepo-controller/backend-api-services';
@@ -12,7 +13,7 @@ export class ApplicationLogService {
   private readonly logger = new Logger(ApplicationLogService.name);
   private readonly logDirectory = process.env.SYS_LOG_DIR
     ? resolve(process.env.SYS_LOG_DIR)
-    : resolve(__dirname, '..', '..', 'sys-logs');
+    : safeJoin(findProjectRoot(), '.agent-state', 'logs', 'system', 'controller');
 
   async writeLog(payload: unknown, defaultSource = DEFAULT_SOURCE): Promise<void> {
     const entry = this.record(payload);

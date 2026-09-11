@@ -7,6 +7,7 @@ planner workflow directive only when it names an available execution workflow.
 
 from __future__ import annotations
 
+import logging
 import re
 from collections.abc import Mapping
 from copy import deepcopy
@@ -18,6 +19,9 @@ from .model import (
     WorkflowContext,
     WorkflowSelection,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 SUPPORTED_USES = frozenset({"agent", "tool", "shell", "hook", "parallel"})
@@ -43,6 +47,7 @@ def resolve_step_references(steps: list[Any], catalog: Mapping[str, Any]) -> lis
         if not isinstance(template, dict):
             raise WorkflowConfigurationError(f"Unknown workflow step reference: {reference!r}")
         resolved.append(deepcopy(template))
+    logger.info("Workflow step references resolved", extra={"step_count": len(resolved)})
     return resolved
 
 
@@ -69,6 +74,7 @@ def validate_steps(steps: list[Any]) -> None:
                 f"Step '{step_id}' depends on later or unknown steps: {', '.join(unknown)}"
             )
         known.add(step_id)
+    logger.info("Workflow steps validated", extra={"step_count": len(known)})
 
 
 def condition_met(condition: Any, context: WorkflowContext) -> bool:
@@ -122,5 +128,7 @@ def resolve_planned_workflow(
         )
     match = WORKFLOW_DIRECTIVE.search(planner_response)
     if match is not None and match.group(1) in available_workflows:
+        logger.info("Planner workflow directive accepted", extra={"workflow_id": match.group(1)})
         return WorkflowSelection(workflow_id=match.group(1), source="planner")
+    logger.info("Planner workflow fallback selected", extra={"workflow_id": fallback_workflow})
     return WorkflowSelection(workflow_id=fallback_workflow, source="resolver-fallback")

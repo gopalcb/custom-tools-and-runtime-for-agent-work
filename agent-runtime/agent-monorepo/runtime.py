@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from collections.abc import AsyncIterator, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -14,11 +15,23 @@ from agents_internal_messaging.bus import MessageBus
 from .codex_client import CodexAppServerClient, CodexProtocolError
 from .events import EventHub, RuntimeEvent
 from .memory.service import MemoryService
+from .planned_tasks import (
+    extract_structured_plan,
+    persist_planned_tasks,
+    render_planned_task_handoff,
+    update_planned_tasks_from_report,
+)
 from .post_completion import post_completion
 from .registry import AgentDefinition, Registry
 from .resolver import Resolver, ResolvedRunSpec, collect_project_context, compact_context
+from .strategy_feedback import StrategyFeedbackCoordinator, build_memory_source, fallback_analysis
+from .system_health import run_monorepo_system_health
 from .workflow import WorkflowCancelled, WorkflowEngine
 from .workflows.workflow_resolver import resolve_planned_workflow
+
+
+logger = logging.getLogger(__name__)
+ERROR_EVENT_TYPES = frozenset({"error", "tool.failed", "background.failed", "run.failed"})
 
 
 @dataclass(slots=True)
@@ -59,7 +72,14 @@ class AgentRuntime:
         self.workflow = workflow
         self.codex = codex_client
         self.messaging = MessageBus(self.registry.messaging_root)
+        self.strategy_feedback = StrategyFeedbackCoordinator(
+            self.project_root,
+            self.registry,
+            self.codex,
+            self.memory,
+        )
         self._runs: dict[str, RunContext] = {}
+        logger.info("AgentRuntime initialized", extra={"project_root": str(self.project_root)})
 
     async def run(
         self,
@@ -72,6 +92,10 @@ class AgentRuntime:
     ) -> AsyncIterator[RuntimeEvent]:
         """Resolve and execute a prompt while streaming durable events."""
         run_id = run_id or f"run-{uuid4().hex[:12]}"
+        logger.info(
+            "Runtime run requested",
+            extra={"run_id": run_id, "session_id": session_id, "agent_id": agent_id, "resume": resume},
+        )
         if resume and session_id is None:
             session_id = self._latest_session_id()
             if session_id is None:
@@ -95,11 +119,13 @@ class AgentRuntime:
         """Cancel an active run and report whether it was found."""
         context = self._runs.get(run_id)
         if context is None:
+            logger.info("Cancel requested for unknown run", extra={"run_id": run_id})
             return False
         context.cancel_event.set()
         for task in context.background_tasks.values():
             task.cancel()
         await self.codex.interrupt()
+        logger.info("Runtime run cancellation requested", extra={"run_id": run_id})
         return True
 
     async def respond_to_approval(self, request_id: int, decision: str) -> None:
@@ -113,6 +139,7 @@ class AgentRuntime:
     async def close(self) -> None:
         """Close the Codex client and release runtime resources."""
         await self.codex.close()
+        logger.info("AgentRuntime closed")
 
     def _latest_session_id(self) -> str | None:
         candidates = sorted(
@@ -145,8 +172,9 @@ class AgentRuntime:
         try:
             resolved = self.resolver.resolve(prompt, agent_id=agent_id)
         except Exception as exc:
+            logger.exception("Run resolution failed", extra={"run_id": run_id, "agent_id": agent_id})
             for event_type in ("error", "run.failed"):
-                await self.events.emit(
+                event = await self.events.emit(
                     self.events.new_event(
                         event_type,
                         run_id=run_id,
@@ -157,6 +185,7 @@ class AgentRuntime:
                         payload={"exception": type(exc).__name__} if event_type == "error" else {},
                     )
                 )
+                self._record_error_alert(event)
             self.events.write_session(
                 session_id,
                 {
@@ -175,6 +204,10 @@ class AgentRuntime:
                 )
             )
             return
+        logger.info(
+            "Run resolved",
+            extra={"run_id": run_id, "agent_id": resolved.agent_id, "workflow_id": resolved.workflow_id},
+        )
         context = RunContext(
             run_id=run_id,
             session_id=session_id,
@@ -193,6 +226,7 @@ class AgentRuntime:
         self._runs[run_id] = context
         self._write_session(context, "active")
         try:
+            await self._ensure_pre_work_health(context)
             await self._emit(
                 context,
                 "resolver.completed",
@@ -214,11 +248,48 @@ class AgentRuntime:
                 "hook": self._hook_step,
             }
             if resolved.planning_workflow_id is not None:
+                logger.info(
+                    "Planning workflow starting",
+                    extra={"run_id": run_id, "workflow_id": resolved.planning_workflow_id},
+                )
                 planning_result = await self.workflow.execute(
                     self.registry.get_workflow(resolved.planning_workflow_id), context, handlers
                 )
                 plan_output = planning_result.outputs.get("plan", {})
                 planner_response = plan_output.get("response", "") if isinstance(plan_output, dict) else ""
+                try:
+                    structured_plan = extract_structured_plan(planner_response)
+                    if structured_plan and structured_plan.get("tasks"):
+                        task_manifest = persist_planned_tasks(
+                            self.project_root,
+                            structured_plan,
+                            run_id=run_id,
+                            session_id=session_id,
+                        )
+                        context.data["planned_tasks_manifest"] = str(task_manifest)
+                        context.data["planned_tasks_plan_id"] = str(structured_plan.get("title", ""))
+                        context.data["planned_tasks_handoff"] = render_planned_task_handoff(structured_plan, task_manifest)
+                        await self._emit(
+                            context,
+                            "artifact.created",
+                            step_id="plan",
+                            status="completed",
+                            message="Planned tasks persisted for controller visibility.",
+                            payload={"path": str(task_manifest), "kind": "planned-tasks"},
+                        )
+                except Exception as exc:
+                    logger.warning(
+                        "Planner task persistence failed; continuing workflow",
+                        extra={"run_id": run_id, "session_id": session_id, "error": str(exc)},
+                    )
+                    await self._emit(
+                        context,
+                        "error",
+                        step_id="plan",
+                        status="need rework",
+                        message=f"Planned task persistence failed; continuing workflow: {exc}",
+                        payload={"exception": type(exc).__name__, "non_blocking": True},
+                    )
                 selection = resolve_planned_workflow(
                     planner_response,
                     self.registry.execution_workflow_ids(),
@@ -236,15 +307,44 @@ class AgentRuntime:
                 definition = self.registry.get_workflow(selection.workflow_id)
             else:
                 definition = self.registry.get_workflow(resolved.workflow_id)
+            logger.info(
+                "Execution workflow starting",
+                extra={"run_id": run_id, "workflow_id": definition.get("id", resolved.workflow_id)},
+            )
             await self.workflow.execute(definition, context, handlers)
             await self._emit(context, "run.completed", status="completed", message="Run completed")
             self._write_session(context, "completed")
             await post_completion(context)
+            logger.info("Run completed", extra={"run_id": run_id, "session_id": session_id})
         except (WorkflowCancelled, asyncio.CancelledError):
             await self._emit(context, "run.cancelled", status="cancelled", message="Run cancelled")
             self._write_session(context, "cancelled")
             await post_completion(context)
+            logger.info("Run cancelled", extra={"run_id": run_id, "session_id": session_id})
         except Exception as exc:
+            logger.exception("Run failed", extra={"run_id": run_id, "session_id": session_id})
+            if not context.data.get("strategy_feedback_completed"):
+                try:
+                    await self._hook_step(
+                        {
+                            "id": "store-strategy-memory",
+                            "name": "Collect feedback and update strategy memory",
+                            "hook": "strategy_memory_feedback",
+                        },
+                        context,
+                    )
+                except Exception as feedback_error:
+                    await self._emit(
+                        context,
+                        "error",
+                        step_id="store-strategy-memory",
+                        status="failed",
+                        message=f"Strategy feedback failed after run error: {feedback_error}",
+                        payload={
+                            "exception": type(feedback_error).__name__,
+                            "non_blocking": True,
+                        },
+                    )
             await self._emit(
                 context,
                 "error",
@@ -267,14 +367,20 @@ class AgentRuntime:
         instructions = self._assembled_instructions(agent, context)
         prompt = self._step_prompt(step, context)
         await self._emit(context, "agent.started", agent_id=target_id, step_id=step["id"], status="running")
+        logger.info(
+            "Agent step started",
+            extra={"run_id": context.run_id, "agent_id": target_id, "step_id": step["id"]},
+        )
         final_parts: list[str] = []
         resume_id: str | None = None
         if context.data.get("resume") and target_id == context.agent_id:
             resume_id = context.data.get("codex_thread_id")
+        codex_options = self.registry.codex_options_for_profile(agent.model_profile)
         async for raw in self.codex.stream_turn(
             prompt,
             developer_instructions=instructions,
-            model=self._model_for_profile(agent.model_profile),
+            model=codex_options["model"],
+            effort=codex_options["effort"],
             thread_id=resume_id,
         ):
             if raw.get("method") == "client/thread":
@@ -300,6 +406,38 @@ class AgentRuntime:
             status="completed",
             message=final[-2000:] if final else None,
         )
+        if step.get("id") != "plan" and context.data.get("planned_tasks_plan_id") and final:
+            try:
+                count = update_planned_tasks_from_report(
+                    self.project_root,
+                    str(context.data["planned_tasks_plan_id"]),
+                    final,
+                    context.run_id,
+                    context.session_id,
+                )
+                if count:
+                    await self._emit(
+                        context,
+                        "artifact.created",
+                        agent_id=target_id,
+                        step_id=step["id"],
+                        status="completed",
+                        message=f"Updated {count} planned-task status entries.",
+                        payload={
+                            "path": str(context.data.get("planned_tasks_manifest", "")),
+                            "kind": "planned-tasks-status",
+                            "count": count,
+                        },
+                    )
+            except Exception as exc:
+                logger.warning(
+                    "Planned task status report could not be applied; continuing workflow",
+                    extra={"run_id": context.run_id, "step_id": step["id"], "error": str(exc)},
+                )
+        logger.info(
+            "Agent step completed",
+            extra={"run_id": context.run_id, "agent_id": target_id, "step_id": step["id"]},
+        )
         return {"agent_id": target_id, "response": final}
 
     async def _tool_step(self, step: dict[str, Any], context: RunContext) -> Any:
@@ -310,6 +448,10 @@ class AgentRuntime:
         if not permitted:
             raise PermissionError(f"Tool '{tool}' is not permitted for {context.agent_id}")
         await self._emit(context, "tool.started", step_id=step["id"], payload={"tool": tool})
+        logger.info(
+            "Runtime tool step started",
+            extra={"run_id": context.run_id, "tool": tool, "step_id": step["id"]},
+        )
         try:
             if tool in {"project_context", "repo"}:
                 items = await collect_project_context(
@@ -341,6 +483,10 @@ class AgentRuntime:
             else:
                 raise ValueError(f"Unknown runtime tool: {tool}")
         except Exception as exc:
+            logger.exception(
+                "Runtime tool step failed",
+                extra={"run_id": context.run_id, "tool": tool, "step_id": step["id"]},
+            )
             await self._emit(
                 context,
                 "tool.failed",
@@ -356,10 +502,18 @@ class AgentRuntime:
             status="completed",
             payload={"tool": tool, "result": result},
         )
+        logger.info(
+            "Runtime tool step completed",
+            extra={"run_id": context.run_id, "tool": tool, "step_id": step["id"]},
+        )
         return result
 
     async def _shell_step(self, step: dict[str, Any], context: RunContext) -> dict[str, Any]:
         command = self._resolve_command(step.get("command"), context)
+        logger.info(
+            "Validation shell step started",
+            extra={"run_id": context.run_id, "step_id": step["id"], "command": command},
+        )
         await self._emit(
             context,
             "tool.started",
@@ -381,6 +535,10 @@ class AgentRuntime:
             "validation": True,
         }
         if process.returncode:
+            logger.error(
+                "Validation shell step failed",
+                extra={"run_id": context.run_id, "step_id": step["id"], "exit_code": process.returncode},
+            )
             await self._emit(
                 context,
                 "tool.failed",
@@ -396,11 +554,189 @@ class AgentRuntime:
             status="completed",
             payload={"tool": "shell", **result},
         )
+        logger.info(
+            "Validation shell step completed",
+            extra={"run_id": context.run_id, "step_id": step["id"]},
+        )
         return result
+
+    async def _ensure_pre_work_health(
+        self,
+        context: RunContext,
+        *,
+        step_id: str = "pre-work-health",
+    ) -> dict[str, Any]:
+        """Run the mandatory pre-work health check once per runtime run."""
+        cached = context.data.get("pre_work_health")
+        if isinstance(cached, dict) and cached.get("status") == "healthy":
+            return {**cached, "cached": True}
+        health = run_monorepo_system_health(
+            self.project_root,
+            state_root=self.registry.state_root,
+            messaging_root=self.registry.messaging_root,
+            memory_root=self.memory.retriever.memory_root,
+        )
+        context.data["pre_work_health"] = health
+        await self._emit(
+            context,
+            "health.checked",
+            step_id=step_id,
+            status=health["status"],
+            message=f"Monorepo system health is {health['status']}.",
+            payload=health,
+        )
+        if health["status"] != "healthy":
+            raise RuntimeError("Monorepo system health check failed")
+        return health
 
     async def _hook_step(self, step: dict[str, Any], context: RunContext) -> dict[str, str]:
         hook = step.get("hook")
         if hook == "analyze_query":
+            return {"hook": hook, "status": "completed"}
+        if hook == "pre_work_health_check":
+            health = await self._ensure_pre_work_health(context, step_id=step["id"])
+            if health.get("cached"):
+                return {"hook": hook, "status": "cached"}
+            return {"hook": hook, "status": "completed"}
+        if hook == "strategy_memory_feedback":
+            if not self.strategy_feedback.enabled():
+                context.data["strategy_feedback_completed"] = True
+                return {"hook": hook, "status": "skipped"}
+            settings = self.strategy_feedback.settings()
+            max_cycles = max(1, min(5, int(settings["max_rework_cycles"])))
+            cycles: list[dict[str, Any]] = []
+            for cycle in range(1, max_cycles + 1):
+                await self._emit(
+                    context,
+                    "feedback.started",
+                    step_id=step["id"],
+                    status="running",
+                    message="Waiting for post-work feedback.",
+                    payload={"cycle": cycle},
+                )
+                feedback = await self.strategy_feedback.collect_feedback(context)
+                feedback_status = str(feedback.get("status") or "cancelled")
+                cycles.append({"cycle": cycle, "status": feedback_status})
+                artifact_path = feedback.get("artifact_path")
+                if artifact_path:
+                    await self._emit(
+                        context,
+                        "artifact.created",
+                        step_id=step["id"],
+                        status="completed",
+                        message="Strategy feedback artifact written.",
+                        payload={"path": str(artifact_path), "kind": "strategy-feedback"},
+                    )
+                if feedback_status != "submitted":
+                    await self._emit(
+                        context,
+                        "feedback.cancelled",
+                        step_id=step["id"],
+                        status=feedback_status,
+                        message=str(feedback.get("reason") or feedback_status),
+                        payload={"cycle": cycle, "feedback": feedback},
+                    )
+                    break
+                await self._emit(
+                    context,
+                    "feedback.submitted",
+                    step_id=step["id"],
+                    status="completed",
+                    message="Post-work feedback submitted.",
+                    payload={
+                        "cycle": cycle,
+                        "store_work_memory": bool(feedback.get("store_work_memory", True)),
+                        "has_requested_change": bool(str(feedback.get("requested_change") or "").strip()),
+                    },
+                )
+                try:
+                    analysis = await self.strategy_feedback.analyze_feedback(context, feedback)
+                except Exception as exc:
+                    analysis = {"feedback_type": "no_action", "rework": {"needed": False}, "memory_actions": []}
+                    await self._emit(
+                        context,
+                        "error",
+                        step_id=step["id"],
+                        status="failed",
+                        message=f"Strategy feedback analysis failed: {exc}",
+                        payload={"exception": type(exc).__name__, "non_blocking": True},
+                    )
+                await self._emit(
+                    context,
+                    "feedback.analyzed",
+                    step_id=step["id"],
+                    status="completed",
+                    message=str(analysis.get("feedback_type") or "no_action"),
+                    payload={"cycle": cycle, "analysis": analysis},
+                )
+                if bool(feedback.get("store_work_memory", True)):
+                    memory_source = build_memory_source(context, feedback)
+                    memory_actions = analysis.get("memory_actions", [])
+                    if not isinstance(memory_actions, list):
+                        memory_actions = []
+                    memory_result = context.memory_service.apply_strategy_memory_actions(
+                        memory_actions,
+                        memory_source,
+                    )
+                    if memory_result.get("stored", 0) == 0 and not memory_actions:
+                        fallback = fallback_analysis(feedback)
+                        fallback_actions = fallback.get("memory_actions", [])
+                        if isinstance(fallback_actions, list) and fallback_actions:
+                            fallback_result = context.memory_service.apply_strategy_memory_actions(
+                                fallback_actions,
+                                memory_source,
+                            )
+                            memory_result = {
+                                **memory_result,
+                                "stored": int(memory_result.get("stored", 0))
+                                + int(fallback_result.get("stored", 0)),
+                                "results": [
+                                    *memory_result.get("results", []),
+                                    *fallback_result.get("results", []),
+                                ],
+                                "fallback_used": True,
+                            }
+                    context.data.setdefault("strategy_memory_updates", []).append(memory_result)
+                    await self._emit(
+                        context,
+                        "memory.updated",
+                        step_id=step["id"],
+                        status="completed",
+                        message=f"Stored {memory_result.get('stored', 0)} strategy memory records.",
+                        payload={"cycle": cycle, "result": memory_result},
+                    )
+                else:
+                    await self._emit(
+                        context,
+                        "memory.updated",
+                        step_id=step["id"],
+                        status="skipped",
+                        message="User unchecked durable strategy-memory storage.",
+                        payload={"cycle": cycle},
+                    )
+                rework = analysis.get("rework") if isinstance(analysis.get("rework"), dict) else {}
+                rework_prompt = str(rework.get("prompt") or "").strip()
+                if not bool(rework.get("needed")) or not rework_prompt:
+                    break
+                await self._emit(
+                    context,
+                    "feedback.rework_requested",
+                    step_id=step["id"],
+                    status="running",
+                    message=rework_prompt[:2000],
+                    payload={"cycle": cycle},
+                )
+                context.data["strategy_rework_prompt"] = rework_prompt
+                await self._agent_step(
+                    {
+                        "id": f"strategy-rework-{cycle}",
+                        "name": "Apply feedback rework",
+                        "agent": "$resolved_agent",
+                    },
+                    context,
+                )
+            context.data["feedback_cycles"] = cycles
+            context.data["strategy_feedback_completed"] = True
             return {"hook": hook, "status": "completed"}
         if hook != "post_completion":
             raise ValueError(f"Unknown hook: {hook}")
@@ -419,6 +755,12 @@ class AgentRuntime:
         allowed_tools = ", ".join(allowed) or "none"
         validations = "\n".join(f"- {item}" for item in context.resolved.validation_commands) or "- none"
         project_context = context.data.get("project_context", "No project context was collected yet.")
+        memory_context = (
+            context.memory_service.retrieve_context(context.prompt)
+            if context.memory_service is not None
+            else ""
+        )
+        memory_context = memory_context or "No relevant project memory was retrieved."
         messaging = self.messaging.pending(context.agent_id)
         messaging_contract = (
             "Messaging is available through agent-msg. Use `agent-msg send --sender "
@@ -441,6 +783,7 @@ class AgentRuntime:
             f"# Runtime contract\nAllowed tools: {allowed_tools}\n"
             f"Validation commands:\n{validations}\n\n"
             f"# Selected project context\n{project_context}\n\n"
+            f"# Retrieved project memory\n{memory_context}\n\n"
             f"# Agent messaging\n{messaging_contract}\n\n"
             + "\n\n".join(skill_sections)
             + research_contract
@@ -448,21 +791,8 @@ class AgentRuntime:
         )
 
     def _model_for_profile(self, profile: str | None) -> str | None:
-        if profile is None:
-            return None
-        profiles = self.registry.project_config.get("model_profiles", {})
-        if not isinstance(profiles, dict) or profile not in profiles:
-            raise ValueError(f"Unknown model profile: {profile}")
-        configured = profiles[profile]
-        if configured is None:
-            return None
-        if isinstance(configured, str):
-            return configured
-        if isinstance(configured, dict) and configured.get("model") in {None, ""}:
-            return None
-        if isinstance(configured, dict) and isinstance(configured.get("model"), str):
-            return configured["model"]
-        raise ValueError(f"Invalid model profile: {profile}")
+        """Return the configured model for legacy runtime callers."""
+        return self.registry.codex_options_for_profile(profile)["model"]
 
     def _step_prompt(self, step: Mapping[str, Any], context: RunContext) -> str:
         prompt = (
@@ -472,9 +802,18 @@ class AgentRuntime:
         )
         if step.get("id") == "plan":
             prompt += (
-                "\n\nChoose the most suitable execution workflow and finish with exactly "
-                "`workflow_id: <id>`. Available execution workflows: "
+                "\n\nReturn a JSON object matching "
+                "`agent-config/agents/agent-implementation-planner/plan.schema.json`. "
+                "Choose the most suitable execution workflow in the `workflow_id` field. "
+                "Available execution workflows: "
                 + ", ".join(sorted(self.registry.execution_workflow_ids()))
+            )
+        elif context.data.get("planned_tasks_handoff"):
+            prompt += "\n\n" + str(context.data["planned_tasks_handoff"])
+        if str(step.get("id", "")).startswith("strategy-rework"):
+            prompt += (
+                "\n\nPost-work feedback rework request:\n"
+                + str(context.data.get("strategy_rework_prompt", "")).strip()
             )
         return prompt
 
@@ -700,7 +1039,7 @@ class AgentRuntime:
         message: str | None = None,
         payload: Mapping[str, Any] | None = None,
     ) -> RuntimeEvent:
-        return await self.events.emit(
+        event = await self.events.emit(
             self.events.new_event(
                 event_type,
                 run_id=context.run_id,
@@ -712,3 +1051,14 @@ class AgentRuntime:
                 payload=dict(payload or {}),
             )
         )
+        self._record_error_alert(event)
+        return event
+
+    def _record_error_alert(self, event: RuntimeEvent) -> None:
+        """Mirror runtime errors into the messaging error tracker."""
+        if event.type not in ERROR_EVENT_TYPES:
+            return
+        try:
+            self.messaging.record_error(event.to_dict())
+        except Exception as error:
+            logger.warning("Could not record runtime error alert: %s", error)

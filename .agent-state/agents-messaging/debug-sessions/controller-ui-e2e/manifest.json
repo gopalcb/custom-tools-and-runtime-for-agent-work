@@ -1,0 +1,62 @@
+{
+  "artifacts": {
+    "console": "/Users/gopalcbala/monorepo/.agent-state/agents-messaging/debug-sessions/controller-ui-e2e/console.json",
+    "network_errors": "/Users/gopalcbala/monorepo/.agent-state/agents-messaging/debug-sessions/controller-ui-e2e/network-errors.json",
+    "screenshot": "/Users/gopalcbala/monorepo/.agent-state/agents-messaging/debug-sessions/controller-ui-e2e/screenshot.png"
+  },
+  "generated_at": "2026-09-10T23:10:29.244890Z",
+  "request": {
+    "full_page_screenshot": true,
+    "notes": null,
+    "request_id": "controller-ui-e2e",
+    "requester": null,
+    "url": "http://127.0.0.1:4201/",
+    "viewport_height": 1200,
+    "viewport_width": 1440,
+    "wait_seconds": 1.0
+  },
+  "summary": {
+    "console_error_count": 5,
+    "console_errors": [
+      {
+        "level": "SEVERE",
+        "message": "http://127.0.0.1:4201/task-thread - Access to resource at 'http://127.0.0.1:3000/api/sys-logs/browser' from origin 'http://127.0.0.1:4201' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: The value of the 'Access-Control-Allow-Credentials' header in the response is '' which must be 'true' when the request's credentials mode is 'include'.",
+        "source": "javascript",
+        "timestamp": 1789081827545
+      },
+      {
+        "level": "SEVERE",
+        "message": "http://127.0.0.1:3000/api/sys-logs/browser - Failed to load resource: net::ERR_FAILED",
+        "source": "network",
+        "timestamp": 1789081827545
+      },
+      {
+        "level": "SEVERE",
+        "message": "http://127.0.0.1:4201/task-thread - Access to resource at 'http://127.0.0.1:3000/api/sys-logs/browser' from origin 'http://127.0.0.1:4201' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: The value of the 'Access-Control-Allow-Credentials' header in the response is '' which must be 'true' when the request's credentials mode is 'include'.",
+        "source": "javascript",
+        "timestamp": 1789081827545
+      },
+      {
+        "level": "SEVERE",
+        "message": "http://127.0.0.1:3000/api/sys-logs/browser - Failed to load resource: net::ERR_FAILED",
+        "source": "network",
+        "timestamp": 1789081827545
+      },
+      {
+        "level": "SEVERE",
+        "message": "http://127.0.0.1:4201/favicon.ico - Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "source": "network",
+        "timestamp": 1789081827553
+      }
+    ],
+    "console_log_count": 8,
+    "errors": [],
+    "network_errors": [],
+    "network_issue_count": 0,
+    "ok": false,
+    "page_title": "Monorepo Controller",
+    "request_id": "controller-ui-e2e",
+    "screenshot_path": "/Users/gopalcbala/monorepo/.agent-state/agents-messaging/debug-sessions/controller-ui-e2e/screenshot.png",
+    "url": "http://127.0.0.1:4201/"
+  }
+}

@@ -3,10 +3,5 @@
   <nav class="menu" aria-label="Header menu">
     @for (item of menuItems; track item.route) { <button class="menu-item" [class.menu-item-selected]="selected(item.route)" type="button" (click)="navigate(item.route)"><span>{{ item.label }}</span></button> }
   </nav>
-  <div class="header-actions">
-    <button class="notification-btn" type="button" aria-label="Notifications" (click)="toggle('notifications',$event)">◌<span class="notification-count">3</span></button>
-    @if (notificationsOpen()) { <div class="header-dropdown notifications-menu" (click)="$event.stopPropagation()"><strong>◈ Notifications</strong><span>Task thread updated</span><span>Runtime event persisted</span><span>Agent completed work</span></div> }
-    <button class="avatar-btn" type="button" aria-label="Operator profile" (click)="toggle('profile',$event)">O</button>
-    @if (profileOpen()) { <div class="header-dropdown profile-menu" (click)="$event.stopPropagation()"><button type="button">◉ Account</button><button type="button">⚙ Settings</button><button type="button">↪ Sign out</button></div> }
-  </div>
+  <div class="header-actions"></div>
 </header>

@@ -2,97 +2,104 @@
 
 ## Purpose
 
-`monorepo-controller` is the browser control surface for a local Codex SDK
-turn. Its routed Agent client starts a turn, carries the unchanged Codex SDK
-event log to the browser in real time, and retains a small reconnect buffer
-per turn.
+`monorepo-controller` is the browser control surface for the local agent
+monorepo. It shows available agents, skills, workflows, task threads, memory
+records, work logs, and the transparent agent messaging portal. The former
+Codex chat client and live Codex turn socket are intentionally removed from this
+project.
 
 ## Three-part project structure
 
 ```text
 monorepo-controller/
 ├── src/                         Angular presentation layer
-│   └── app/                     Views, store, HTTP client, Socket.IO client
-├── backend-api-services/        NestJS transport layer
-│   └── src/                     REST controller and reusable event gateway
-└── ../../agent-tools/           Local Codex integration layer
-    ├── codex-sdk-client/api.py  SDK process and raw NDJSON Codex event source
-    └── ui-debugger/api.py       Stable debugger proxy used by Nest
+│   └── app/                     Routed controller views and shared store
+├── backend-api-services/        NestJS controller API
+│   └── src/                     Repository-backed data services and routes
+└── ../../agent-runtime/
+    └── agent-monorepo/          Python runtime that owns execution and events
 ```
 
-The three parts have deliberately narrow ownership:
+The ownership boundary is narrow:
 
-1. Angular renders state and sends user intent; the `agent-client` route is
-   the dedicated console UI and does not parse files or connect to Codex
-   directly.
-2. Nest owns HTTP commands and the reusable Socket.IO fan-out service.
-3. The Python tools own SDK lifecycle and the debugger-facing HTTP contract.
-
-Application runtime logs are separate from agent interaction logs. Browser,
-Nest, and other controller application events are written under
-`sys-logs/log-yyyy-mm-dd.log` using:
-
-```text
-<datetime> - <application name/path/to/file> - <label> - <log message>
-```
-
-`ApplicationLogService` owns the file format and daily log files. Angular
-installs `BrowserLoggingService` at bootstrap to forward console calls,
-framework errors, unhandled promise rejections, failed `fetch` calls, and
-failed XHR requests to the backend logging endpoint.
-
-## Live event flow
-
-```text
-Angular POST /api/codex/turns
-  -> Nest CodexController
-  -> CodexApiClientService
-  -> ui-debugger /v1/turns
-  -> codex-sdk-client /v1/turns
-  -> Codex SDK
-
-Codex SDK NDJSON notifications
-  -> ui-debugger passthrough
-  -> Nest CodexEventsGateway (one reader per turn)
-  -> Socket.IO /codex room turn:<id>
-  -> Angular CodexRealtimeService
-```
-
-The raw stream is intentionally not terminal-scraped or transformed into a
-second log format. The event gateway packages each notification with its turn
-id, keeps the most recent 500 events for a reconnecting socket, and signals
-completion after the stream closes.
-
-The broader agent runtime continues to own durable `RuntimeEvent` records for
-workflow runs. This controller is the SDK-client control surface and never
-polls runtime JSONL files.
-
-## Agent client UI
-
-`/agent-client` replaces the former persistent chat sidebar. It presents the
-Codex turn API as a dedicated workflow, activity, background-task, and prompt
-workspace. The component derives display state only from events received via
-`CodexRealtimeService`; the Nest API remains the sole HTTP and real-time
-transport boundary.
+1. Angular renders controller state, submits operator intent, and polls the
+   backend snapshot API for refreshed state.
+2. Nest reads and writes the monorepo's declarative files and durable local
+   artifacts. It does not execute workflow logic itself.
+3. The Python runtime still owns resolution, workflow execution, Codex App
+   Server protocol, RuntimeEvent records, finalization, memory extraction, and
+   task execution.
 
 ## Backend API
 
-- `GET /api/codex/health` checks the debugger and SDK service chain.
-- `POST /api/codex/turns` starts a turn and begins the single stream reader.
-- `GET /api/codex/turns/:turnId` returns the reconnect buffer.
-- `POST /api/codex/turns/:turnId/steer` forwards additional user input.
-- `POST /api/codex/turns/:turnId/interrupt` forwards cancellation.
-- `POST /api/sys-logs/browser` accepts browser console, runtime, fetch, and
-  XHR error logs and appends them to `sys-logs/log-yyyy-mm-dd.log`.
-- Socket namespace `/codex` accepts `codex.subscribe` with `{ turnId }` and
-  emits `codex.ready`, `codex.event`, and `codex.completed`.
+- `GET /api/controller/snapshot` returns all controller collections in one
+  response for the shared Angular store.
+- `GET /api/controller/agents` reads `agent-config/agents/*/agent.yaml` and instructions.
+- `GET /api/controller/skills` reads `agent-config/skills/**/SKILL.md`.
+- `POST /api/controller/skills` creates a new skill file and can append it to
+  selected agent YAML definitions.
+- `GET /api/controller/workflows` reads workflow YAML and expands step refs for
+  display.
+- `GET /api/controller/tasks` reads messaging task records, planned task
+  manifests under `agent-runtime/controller-data-store/planned-tasks/`, and
+  fallback tasks from RuntimeEvent run artifacts.
+- `POST /api/controller/tasks` creates a `task_request` message, writes a task
+  record, and starts the Python task runner.
+- `GET /api/controller/memory` reads deterministic memory records from
+  `.agent-state/cache/memory/records/`.
+- `GET /api/controller/work-logs` projects runtime and messaging events into a
+  compact timeline.
+- `GET /api/controller/messaging` reads message records, message events, task
+  status counts, the active operational error, and archived error records from
+  `.agent-state/agents-messaging/`.
+- `POST /api/controller/messages` sends an arbitrary message. UI debug requests
+  to `agent-ui-debugger` also start one hub dispatch pass.
+- `GET /api/controller/messaging/:messageId/thread` returns a message and its
+  replies.
+- `POST /api/sys-logs/browser` accepts browser runtime logs from Angular.
+
+## Task Flow
+
+Angular posts a task request to Nest. `MonorepoDataService` writes the pending
+message under `.agent-state/agents-messaging/inbox/<agent>/`, indexes it under
+`records/messages/`, appends `records/events.jsonl`, and writes
+`records/tasks/<task>.json`. `TaskRunnerService` launches
+`python -m agent_monorepo.task_runner`, which marks the task implementing,
+streams the normal runtime workflow, finalizes runtime artifacts, updates the
+task status, and sends a `task_request.result` reply.
+
+Structured implementation plans also write tracked `planned-task` entries to
+`agent-runtime/controller-data-store/planned-tasks/<plan-title>/`. Each
+directory contains `tasks.yaml` plus one markdown file per planned task.
+`MonorepoDataService` projects those YAML entries into the same task list used
+by the Angular task thread. Runtime execution receives the generated task
+identifiers in the next workflow step, and the Python task runner updates
+linked YAML status as execution tasks move to implementing, complete, or need
+rework.
+
+## UI Debugger Flow
+
+Requesters send a `ui_debug_request` message to `agent-ui-debugger`. The message
+hub dispatches it to `agent-tools/ui-debugger`, which opens the URL with
+Selenium, captures browser logs, filters Chrome DevTools network events to
+actual failed fetch/XHR or document requests, saves a full-page screenshot, and
+replies with compact counts and artifact paths.
 
 ## Configuration
 
-`UI_DEBUGGER_API_URL` configures Nest's debugger API (default
-`http://127.0.0.1:8771`). `CODEX_SDK_API_URL` configures the debugger's SDK
-API (default `http://127.0.0.1:8770`). `UI_ORIGIN` is an optional
-comma-separated CORS allowlist. Angular defaults to `http://127.0.0.1:3000`;
-set `globalThis.__MONOREPO_BACKEND_URL__` before bootstrapping to override it.
-`SYS_LOG_DIR` can override the backend log directory; otherwise logs are
-created in `monorepo-controller/sys-logs/`.
+`MONOREPO_ROOT` can override project-root discovery for the backend. `UI_ORIGIN`
+is an optional comma-separated CORS allowlist. `SYS_LOG_DIR` can override the
+backend sys-log directory; otherwise logs are created in
+`.agent-state/logs/system/controller/`.
+
+The Angular UI is served at `http://localhost:1001`. Its API URL defaults to
+`http://localhost:1002`; set
+`globalThis.__MONOREPO_BACKEND_URL__` before bootstrapping to override it.
+
+The repository `.codex/hooks.json` invokes `.codex/hooks/start-controller.mjs`
+on session start after `.codex/hooks/pre-work-health.py` confirms monorepo
+system health. The controller startup hook serializes startup with a process
+lock, checks HTTP readiness, and starts missing services as detached processes.
+Startup output is stored under `.agent-state/logs/controller/startup/`; process
+state lives under `.agent-state/cache/controller/`. These low ports require OS
+permission on systems that restrict ports below 1024.

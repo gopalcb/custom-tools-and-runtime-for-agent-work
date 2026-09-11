@@ -1,0 +1,15 @@
+project: strategy-feedback
+files:
+  strategy_feedback_gui.py:
+    purpose: Tkinter CLI tool that collects post-work feedback for the runtime.
+    functions:
+      utc_now:
+        summary: Return a UTC timestamp for feedback payloads.
+      write_response:
+        summary: Persist a feedback response JSON file.
+      build_parser:
+        summary: Create the command-line parser for the feedback form.
+      run_form:
+        summary: Display the feedback form and write submit or cancel state.
+      main:
+        summary: Parse arguments, run the form, and handle headless failures.

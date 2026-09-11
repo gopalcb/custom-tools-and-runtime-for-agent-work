@@ -167,6 +167,119 @@ class FinalizationBehaviorTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaisesRegex(ValueError, "no persisted events"):
             finalize_run(self.hub, self.memory, "session-final", "empty-run")
 
+    async def test_enabled_memory_candidates_are_stored_and_retrievable(self) -> None:
+        memory = MemoryService(
+            Path(self.temporary.name) / "memory-enabled",
+            retrieval_enabled=True,
+            extraction_enabled=True,
+        )
+        await self.emit(
+            "run.started",
+            "2026-01-01T00:00:00Z",
+            agent_id="codex-agent",
+            message="Fix unsupported Codex CLI 0.154.0 planning failure",
+        )
+        await self.emit(
+            "resolver.completed",
+            "2026-01-01T00:00:01Z",
+            agent_id="codex-agent",
+            payload={"agent_id": "codex-agent", "workflow_id": "default"},
+        )
+        await self.emit(
+            "workflow.step.failed",
+            "2026-01-01T00:00:02Z",
+            agent_id="codex-agent",
+            step_id="plan",
+            message="Unsupported Codex CLI 0.154.0; supported range is >=0.153.4,<0.154.0.",
+        )
+        await self.emit(
+            "error",
+            "2026-01-01T00:00:03Z",
+            agent_id="codex-agent",
+            message="Unsupported Codex CLI 0.154.0; supported range is >=0.153.4,<0.154.0.",
+        )
+        await self.emit(
+            "run.failed",
+            "2026-01-01T00:00:04Z",
+            agent_id="codex-agent",
+            message="Unsupported Codex CLI 0.154.0; supported range is >=0.153.4,<0.154.0.",
+        )
+
+        paths = finalize_run(self.hub, memory, "session-final", "run-final")
+        candidates = json.loads(paths.memory_candidates.read_text(encoding="utf-8"))
+        records = memory.load_records()
+        context = memory.retrieve_context("Codex CLI 0.154.0 planning failure")
+
+        self.assertEqual("ready", candidates["status"])
+        self.assertGreaterEqual(len(candidates["candidates"]), 2)
+        self.assertEqual(
+            set(candidates["stored_records"]),
+            {record["path"] for record in records},
+        )
+        self.assertIn("Unsupported Codex CLI 0.154.0", context)
+
+    async def test_strategy_memory_actions_store_and_supersede_active_records(self) -> None:
+        memory = MemoryService(
+            Path(self.temporary.name) / "strategy-memory",
+            retrieval_enabled=True,
+            extraction_enabled=True,
+        )
+        source = {
+            "session_id": "session-final",
+            "run_id": "run-final",
+            "created_at": "2026-01-01T00:00:05Z",
+            "scope": {
+                "repo": "agent-monorepo",
+                "agent_id": "agent-monorepo",
+                "workflow_id": "default",
+            },
+        }
+
+        first = memory.apply_strategy_memory_actions(
+            [
+                {
+                    "action": "add",
+                    "kind": "user-work-strategy",
+                    "subject": "Manual testing feedback",
+                    "content": "The user prefers manual testing gaps to become a rework loop before the final answer.",
+                    "confidence": 0.9,
+                }
+            ],
+            source,
+        )
+        second = memory.apply_strategy_memory_actions(
+            [
+                {
+                    "action": "update",
+                    "kind": "user-work-strategy",
+                    "subject": "Manual testing feedback",
+                    "content": "The user prefers manual testing feedback to trigger rework and another feedback request before finalization.",
+                    "confidence": 0.95,
+                }
+            ],
+            {**source, "created_at": "2026-01-01T00:01:00Z"},
+        )
+
+        records = memory.load_records()
+        active = [
+            record for record in records
+            if record["metadata"].get("kind") == "user-work-strategy"
+            and record["metadata"].get("status") == "active"
+        ]
+        superseded = [
+            record for record in records
+            if record["metadata"].get("kind") == "user-work-strategy"
+            and record["metadata"].get("status") == "superseded"
+        ]
+        context = memory.retrieve_context("manual testing feedback rework finalization")
+
+        self.assertEqual(1, first["stored"])
+        self.assertEqual(1, second["stored"])
+        self.assertEqual(1, len(active))
+        self.assertEqual(1, len(superseded))
+        self.assertIn("another feedback request", context)
+        self.assertNotIn("before the final answer", context)
+
 
 if __name__ == "__main__":
     unittest.main()

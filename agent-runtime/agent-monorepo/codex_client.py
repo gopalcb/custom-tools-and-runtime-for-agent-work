@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import re
 import shlex
 import shutil
@@ -21,6 +22,9 @@ except ImportError as error:  # The App Server adapter remains importable withou
     CODEX_SDK_IMPORT_ERROR = error
 else:
     CODEX_SDK_IMPORT_ERROR = None
+
+
+logger = logging.getLogger(__name__)
 
 
 class CodexProtocolError(RuntimeError):
@@ -63,6 +67,7 @@ class CodexSDKClient:
         )
         self._codex = Codex(config=config)
         self.approval_mode = approval_mode
+        logger.info("Codex SDK client initialized", extra={"cwd": self.cwd, "model": self.model})
 
     @staticmethod
     def resolve_native_codex() -> str:
@@ -114,6 +119,7 @@ class CodexSDKClient:
         else:
             options["ephemeral"] = ephemeral
             thread = self._codex.thread_start(**options)
+        logger.info("Codex SDK text run started", extra={"thread_id": thread.id, "model": model or self.model})
         run_options = {
             "cwd": self.cwd,
             "sandbox": self.sandbox(sandbox),
@@ -124,6 +130,10 @@ class CodexSDKClient:
         if self.approval_mode is not None:
             run_options["approval_mode"] = self.approval_mode
         result = thread.run(prompt, **run_options)
+        logger.info(
+            "Codex SDK text run completed",
+            extra={"thread_id": thread.id, "turn_id": result.id, "status": str(result.status)},
+        )
         return CodexRunResult(
             text=result.final_response or "",
             thread_id=thread.id,
@@ -218,6 +228,7 @@ class CodexSDKClient:
     def close(self) -> None:
         """Close the SDK runtime connection."""
         self._codex.close()
+        logger.info("Codex SDK client closed")
 
     def __enter__(self) -> "CodexSDKClient":
         """Enter the client context manager."""
@@ -248,7 +259,7 @@ class CodexAppServerClient:
         writable_roots: Sequence[str | Path] = (),
         network_access: bool = True,
         min_version: tuple[int, int, int] = (0, 153, 4),
-        max_version: tuple[int, int, int] = (0, 154, 0),
+        max_version: tuple[int, int, int] = (0, 155, 0),
         approval_handler: Callable[[dict[str, Any]], Awaitable[str]] | None = None,
     ) -> None:
         self.command = tuple(shlex.split(command) if isinstance(command, str) else command)
@@ -274,11 +285,16 @@ class CodexAppServerClient:
         self._write_lock = asyncio.Lock()
         self._stderr: list[str] = []
         self._active_turn: tuple[str, str] | None = None
+        logger.info(
+            "Codex App Server client initialized",
+            extra={"command": " ".join(self.command), "cwd": str(self.cwd), "sandbox": self.sandbox},
+        )
 
     async def start(self) -> None:
         if self.process is not None:
             return
         await self.check_version()
+        logger.info("Starting Codex App Server", extra={"command": " ".join(self.command), "cwd": str(self.cwd)})
         self.process = await asyncio.create_subprocess_exec(
             *self.command,
             cwd=str(self.cwd),
@@ -300,8 +316,10 @@ class CodexAppServerClient:
             },
         )
         await self.notify("initialized", {})
+        logger.info("Codex App Server initialized")
 
     async def check_version(self) -> tuple[int, int, int]:
+        logger.info("Checking Codex CLI version", extra={"command": self.command[0]})
         process = await asyncio.create_subprocess_exec(
             self.command[0],
             "--version",
@@ -318,6 +336,7 @@ class CodexAppServerClient:
             raise CodexProtocolError(
                 f"Unsupported Codex CLI {'.'.join(map(str, version))}; supported range is {supported}."
             )
+        logger.info("Codex CLI version accepted", extra={"version": ".".join(map(str, version))})
         return version
 
     async def request(self, method: str, params: Mapping[str, Any]) -> dict[str, Any]:
@@ -334,10 +353,12 @@ class CodexAppServerClient:
         if "error" in response:
             error = response["error"]
             message = error.get("message", error) if isinstance(error, dict) else error
+            logger.error("Codex App Server request failed", extra={"method": method, "request_id": request_id})
             raise CodexProtocolError(f"{method} failed: {message}")
         result = response.get("result", {})
         if not isinstance(result, dict):
             raise CodexProtocolError(f"{method} returned a non-object result")
+        logger.info("Codex App Server request completed", extra={"method": method, "request_id": request_id})
         return result
 
     async def notify(self, method: str, params: Mapping[str, Any]) -> None:
@@ -350,6 +371,7 @@ class CodexAppServerClient:
         *,
         developer_instructions: str,
         model: str | None = None,
+        effort: str | None = None,
         thread_id: str | None = None,
     ) -> AsyncIterator[dict[str, Any]]:
         await self.start()
@@ -369,22 +391,36 @@ class CodexAppServerClient:
         active_thread_id = thread.get("id")
         if not active_thread_id:
             raise CodexProtocolError("App Server did not return a thread id")
+        logger.info(
+            "Codex turn starting",
+            extra={
+                "thread_id": active_thread_id,
+                "resumed": bool(thread_id),
+                "model": model,
+                "effort": effort,
+            },
+        )
+        turn_params = {
+            "threadId": active_thread_id,
+            "input": [{"type": "text", "text": prompt}],
+            "cwd": str(self.cwd),
+            "approvalPolicy": self.approval_policy,
+            "sandboxPolicy": self._sandbox_policy(),
+        }
+        if model:
+            turn_params["model"] = model
+        if effort:
+            turn_params["effort"] = effort
         turn_result = await self.request(
             "turn/start",
-            {
-                "threadId": active_thread_id,
-                "input": [{"type": "text", "text": prompt}],
-                "cwd": str(self.cwd),
-                "approvalPolicy": self.approval_policy,
-                "sandboxPolicy": self._sandbox_policy(),
-                **({"model": model} if model else {}),
-            },
+            turn_params,
         )
         turn = turn_result.get("turn") or {}
         turn_id = turn.get("id")
         if not turn_id:
             raise CodexProtocolError("App Server did not return a turn id")
         self._active_turn = (active_thread_id, turn_id)
+        logger.info("Codex turn started", extra={"thread_id": active_thread_id, "turn_id": turn_id})
         yield {"method": "client/thread", "params": {"threadId": active_thread_id, "turnId": turn_id}}
         try:
             while True:
@@ -398,6 +434,7 @@ class CodexAppServerClient:
                     continue
                 yield message
                 if message.get("method") == "turn/completed":
+                    logger.info("Codex turn completed", extra={"thread_id": active_thread_id, "turn_id": turn_id})
                     break
         finally:
             self._active_turn = None
@@ -408,6 +445,7 @@ class CodexAppServerClient:
             raise ValueError("Codex commands must start with '/'")
         parts = shlex.split(command_text.strip())
         name = parts[0].casefold()
+        logger.info("Codex slash command requested", extra={"command": name})
         if name == "/models":
             await self.start()
             result = await self.request("model/list", {})
@@ -416,11 +454,16 @@ class CodexAppServerClient:
                 models = []
             return {"command": name, "models": models}
         if name == "/status":
-            return {
+            version = await self.check_version()
+            result: dict[str, Any] = {
                 "command": name,
                 "running": self.process is not None and self.process.returncode is None,
                 "active_turn": self._active_turn,
+                "version": ".".join(map(str, version)),
             }
+            if result["running"]:
+                result["diagnostics"] = await self.request("server/diagnostics", {})
+            return result
         if name == "/help":
             return {
                 "command": name,
@@ -433,7 +476,7 @@ class CodexAppServerClient:
             if self._active_turn is None:
                 raise CodexProtocolError("/compact requires an active Codex turn")
             thread_id, _turn_id = self._active_turn
-            result = await self.request("thread/compact", {"threadId": thread_id})
+            result = await self.request("thread/compact/start", {"threadId": thread_id})
             return {"command": name, **result}
         raise CodexProtocolError(
             f"Unsupported slash command {parts[0]!r} for the App Server adapter"
@@ -444,6 +487,7 @@ class CodexAppServerClient:
             return
         thread_id, turn_id = self._active_turn
         await self.request("turn/interrupt", {"threadId": thread_id, "turnId": turn_id})
+        logger.info("Codex turn interrupt requested", extra={"thread_id": thread_id, "turn_id": turn_id})
 
     async def respond_to_approval(self, request_id: int, decision: str) -> None:
         """Resolve an approval request previously emitted by the client."""
@@ -453,6 +497,7 @@ class CodexAppServerClient:
         if not isinstance(decision, str) or not decision.strip():
             raise ValueError("Approval decision must be a non-empty string")
         future.set_result(decision)
+        logger.info("Codex approval decision recorded", extra={"request_id": request_id})
 
     async def close(self) -> None:
         process, self.process = self.process, None
@@ -473,6 +518,7 @@ class CodexAppServerClient:
             *(task for task in (self._reader_task, self._stderr_task) if task),
             return_exceptions=True,
         )
+        logger.info("Codex App Server client closed")
 
     async def _ensure_running(self) -> None:
         if self.process is None or self.process.returncode is not None:
@@ -494,6 +540,7 @@ class CodexAppServerClient:
                 try:
                     message = json.loads(line)
                 except json.JSONDecodeError as exc:
+                    logger.exception("Codex App Server emitted invalid JSONL")
                     raise CodexProtocolError("App Server emitted invalid JSONL") from exc
                 request_id = message.get("id")
                 if request_id in self._pending and ("result" in message or "error" in message):
@@ -506,10 +553,12 @@ class CodexAppServerClient:
                     await self._messages.put(message)
             detail = "\n".join(self._stderr[-8:])
             error = CodexProtocolError(f"Codex App Server exited unexpectedly. {detail}".strip())
+            logger.error("Codex App Server stdout closed unexpectedly")
         except asyncio.CancelledError:
             return
         except Exception as exc:
             error = exc
+            logger.exception("Codex App Server stdout reader failed")
         for future in self._pending.values():
             if not future.done():
                 future.set_exception(error)
@@ -519,6 +568,7 @@ class CodexAppServerClient:
         if "approval" not in method.casefold():
             await self._messages.put(message)
             await self._send({"id": message["id"], "result": {"decision": "cancel"}})
+            logger.info("Unsupported server request cancelled", extra={"method": method})
             return
 
         request_id = message["id"]
@@ -535,6 +585,7 @@ class CodexAppServerClient:
         if self.approval_policy == "never":
             await self._messages.put(normalized)
             await self._send({"id": request_id, "result": {"decision": "accept"}})
+            logger.info("Approval request accepted by policy", extra={"request_id": request_id})
             return
 
         if self.approval_handler is not None:
@@ -551,6 +602,7 @@ class CodexAppServerClient:
         if not isinstance(decision, str) or not decision.strip():
             raise CodexProtocolError("Approval handler returned an invalid decision")
         await self._send({"id": message["id"], "result": {"decision": decision}})
+        logger.info("Approval request resolved", extra={"request_id": request_id})
 
     async def _read_stderr(self) -> None:
         assert self.process and self.process.stderr
@@ -558,6 +610,7 @@ class CodexAppServerClient:
             while line := await self.process.stderr.readline():
                 self._stderr.append(line.decode("utf-8", errors="replace").rstrip())
                 del self._stderr[:-50]
+                logger.info("Codex App Server stderr", extra={"stderr": self._stderr[-1]})
         except asyncio.CancelledError:
             return
 

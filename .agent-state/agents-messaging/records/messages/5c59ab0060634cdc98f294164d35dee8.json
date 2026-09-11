@@ -1,0 +1,33 @@
+{
+  "created_at": "2026-09-10T23:11:43.994192Z",
+  "folder_agent_id": "monorepo-controller",
+  "id": "5c59ab0060634cdc98f294164d35dee8",
+  "path": "/Users/gopalcbala/monorepo/.agent-state/agents-messaging/inbox/monorepo-controller/2026-09-10T231143994192Z-5c59ab0060634cdc98f294164d35dee8.json",
+  "payload": {
+    "artifact_dir": "/Users/gopalcbala/monorepo/.agent-state/agents-messaging/debug-sessions/controller-ui-e2e-fixed",
+    "manifest_path": "/Users/gopalcbala/monorepo/.agent-state/agents-messaging/debug-sessions/controller-ui-e2e-fixed/manifest.json",
+    "ok": true,
+    "request_id": "controller-ui-e2e-fixed",
+    "summary": {
+      "artifact_paths": {
+        "console": "/Users/gopalcbala/monorepo/.agent-state/agents-messaging/debug-sessions/controller-ui-e2e-fixed/console.json",
+        "manifest": "/Users/gopalcbala/monorepo/.agent-state/agents-messaging/debug-sessions/controller-ui-e2e-fixed/manifest.json",
+        "network_errors": "/Users/gopalcbala/monorepo/.agent-state/agents-messaging/debug-sessions/controller-ui-e2e-fixed/network-errors.json"
+      },
+      "console_error_count": 0,
+      "console_errors": [],
+      "console_log_count": 3,
+      "network_errors": [],
+      "network_issue_count": 0,
+      "page_title": "Monorepo Controller",
+      "screenshot_path": "/Users/gopalcbala/monorepo/.agent-state/agents-messaging/debug-sessions/controller-ui-e2e-fixed/screenshot.png",
+      "url": "http://127.0.0.1:4201/"
+    }
+  },
+  "recipient": "monorepo-controller",
+  "reply_to": "6a2491b9103f409da92c312a6b52278b",
+  "sender": "agent-ui-debugger",
+  "status": "pending",
+  "type": "ui_debug_request.result",
+  "updated_at": "2026-09-10T23:11:43.994729Z"
+}

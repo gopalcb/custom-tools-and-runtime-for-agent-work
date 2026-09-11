@@ -1,0 +1,28 @@
+version: 1
+
+id: diagram-builder
+name: Diagram Builder
+description: Create transparent-background HTML diagrams from declarative YAML.
+aliases:
+  - diag builder
+  - diagram builder
+  - create diagram
+  - build diagram
+  - render diagram
+  - html diagram
+  - architecture diagram
+
+instructions: instructions.md
+workflow: default
+
+skills:
+  - repository-navigation
+  - safe-file-editing
+  - python-coder
+  - diagram-builder
+
+tools:
+  - repo
+  - shell
+
+model_profile: standard

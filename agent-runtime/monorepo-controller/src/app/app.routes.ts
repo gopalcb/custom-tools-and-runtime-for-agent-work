@@ -6,7 +6,6 @@ import { WorkflowsViewComponent } from './components/workflows-view/workflows-vi
 import { MemoryViewComponent } from './components/memory-view/memory-view.component';
 import { WorkLogsViewComponent } from './components/work-logs-view/work-logs-view.component';
 import { MessagingPortalComponent } from './components/messaging-portal/messaging-portal.component';
-import { AgentClientComponent } from './components/agent-client/agent-client.component';
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'task-thread' },
   { path: 'task-thread', component: TaskThreadComponent },
@@ -17,6 +16,5 @@ export const routes: Routes = [
   { path: 'memory', component: MemoryViewComponent },
   { path: 'work-logs', component: WorkLogsViewComponent },
   { path: 'messaging', component: MessagingPortalComponent },
-  { path: 'agent-client', component: AgentClientComponent },
   { path: '**', redirectTo: 'task-thread' }
 ];

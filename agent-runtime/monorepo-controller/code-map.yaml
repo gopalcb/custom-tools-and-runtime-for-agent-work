@@ -2,16 +2,37 @@ project: monorepo-controller
 
 files:
   backend-api-services/src/main.ts:
-    purpose: Bootstrap the Nest HTTP and Socket.IO application and record startup logs.
+    purpose: Bootstrap the Nest HTTP application and record startup logs.
     functions: [bootstrap]
   backend-api-services/src/app.module.ts:
-    purpose: Register the Codex and application-log REST controllers with live-event and logging services.
+    purpose: Register controller, logging, repository data, and task runner services.
     classes: [AppModule]
   backend-api-services/src/contracts.ts:
-    purpose: Define shared REST, Socket.IO, and application-log payloads.
-    types: [StartTurnRequest, TurnReference, CodexSocketEvent, TurnSnapshot, ApplicationLogLevel, RuntimeLogRequest]
+    purpose: Define shared REST payloads for tasks, planned task metadata, agents, skills, workflows, memory, logs, and messages.
+    types: [TaskStatus, TaskEvent, TaskRecord, CreateTaskRequest, AgentSummary, SkillSummary, CreateSkillRequest, WorkflowSummary, MemoryEntry, WorkLog, MessageRecordPayload, OperationalErrorRecord, CreateMessageRequest, MessagingSummary, MessagingSnapshot, ControllerSnapshot, ApplicationLogLevel, RuntimeLogRequest]
+  backend-api-services/src/project-paths.ts:
+    purpose: Resolve the monorepo root and enforce safe backend path handling.
+    functions: [findProjectRoot, safeJoin, asRecord, asStringArray]
+  backend-api-services/src/monorepo-data.service.ts:
+    purpose: Read and write repository-backed controller state from YAML files, planned task manifests, RuntimeEvent artifacts, memory records, message records, and operational error records.
+    classes:
+      MonorepoDataService:
+        functions: [snapshot, agents, skills, addSkill, workflows, tasks, createTask, sendMessage, messaging, messageThread, memory, workLogs]
+        function_summary: Exposes the monorepo control plane as structured API-ready collections and writes task/message/skill mutations while projecting planned tasks into the task list.
+  backend-api-services/src/task-runner.service.ts:
+    purpose: Launch Python runtime task execution and message-hub dispatches from controller actions.
+    classes:
+      TaskRunnerService:
+        functions: [launch, runHubOnce]
+        function_summary: Starts detached Python processes after messages are durably queued.
+  backend-api-services/src/controller.controller.ts:
+    purpose: Expose repository-backed controller REST endpoints.
+    classes:
+      ControllerController:
+        functions: [snapshot, agents, skills, addSkill, workflows, tasks, createTask, memory, workLogs, messaging, sendMessage, messageThread]
+        function_summary: Maps controller HTTP requests to data and runner services.
   backend-api-services/src/application-log.service.ts:
-    purpose: Persist application runtime logs to daily sys-logs files.
+    purpose: Persist application runtime logs to daily .agent-state system log files.
     classes:
       ApplicationLogService:
         functions: [writeLog, writeBackendLog, record, timestamp, level, message, fileName, text, limit, errorMessage]
@@ -22,36 +43,18 @@ files:
       ApplicationLogsController:
         functions: [browserLog]
         function_summary: Save browser console, runtime, fetch, and XHR logs through ApplicationLogService.
-  backend-api-services/src/codex-api-client.service.ts:
-    purpose: Call debugger API endpoints, decode their NDJSON event stream, and record transport logs.
-    classes:
-      CodexApiClientService:
-        functions: [health, startTurn, steerTurn, interruptTurn, streamTurn, request, fetch, parseEvent, errorMessage]
-        function_summary: Health and turn commands call the debugger API; streamTurn parses NDJSON; private methods validate transport responses.
-  backend-api-services/src/codex-events.gateway.ts:
-    purpose: Fan one Codex stream per turn to reconnectable Socket.IO rooms and log socket lifecycle events.
-    classes:
-      CodexEventsGateway:
-        functions: [handleConnection, subscribe, startTurn, snapshot, watchTurn, completeTurn, room, errorMessage]
-        function_summary: Starts one reader, buffers turn events, and broadcasts them to Socket.IO turn rooms.
-  backend-api-services/src/codex.controller.ts:
-    purpose: Expose Codex turn health, creation, snapshot, steering, and interruption routes with request logging.
-    classes:
-      CodexController:
-        functions: [health, startTurn, turnSnapshot, steerTurn, interruptTurn]
-        function_summary: Map REST requests to the debugger client and event gateway.
   src/main.ts:
     purpose: Bootstrap the standalone Angular application and install browser runtime logging.
     functions: []
   src/app/app.component.ts:
-    purpose: Compose the header and full-width routed workspace.
+    purpose: Compose the header and routed workspace.
     classes: [AppComponent]
   src/app/app.routes.ts:
-    purpose: Define controller navigation routes.
+    purpose: Define controller navigation routes without the removed Codex chat client.
     functions: []
   src/app/shared-services/interfaces.ts:
-    purpose: Define UI, HTTP, and Codex turn data contracts.
-    types: [AppRequest, AppResponse, Task, Agent, Skill, Workflow, MemoryEntry, WorkLog, CodexTurnRequest, CodexTurnReference, CodexSocketEvent]
+    purpose: Define UI and controller API data contracts, including planned task and operational error metadata.
+    types: [TaskStatus, TaskEvent, Task, Agent, Skill, WorkflowStep, Workflow, MemoryEntry, WorkLog, MessageRecord, OperationalErrorRecord, MessagingSummary, MessagingSnapshot, ControllerSnapshot, CreateTaskRequest, CreateSkillRequest, CreateMessageRequest]
   src/app/shared-services/backend-url.ts:
     purpose: Define the backend API base URL used by Angular services.
     functions: []
@@ -66,74 +69,64 @@ files:
     classes:
       BrowserErrorHandler:
         functions: [handleError]
-  src/app/shared-services/mock-data.ts:
-    purpose: Supply placeholder content for collection views not yet runtime-backed.
-    functions: []
   src/app/shared-services/http.service.ts:
-    purpose: Serve current mock collection data to existing views.
+    purpose: Call the repository-backed controller REST API.
     classes:
       HttpService:
-        functions: [request]
+        functions: [snapshot, tasks, createTask, agents, skills, addSkill, workflows, memory, workLogs, messaging, sendMessage, messageThread]
   src/app/shared-services/store.service.ts:
-    purpose: Hold collection-view state and selected identifiers.
+    purpose: Hold controller collection state, selected identifiers, mutation helpers, and snapshot refresh.
     classes:
       StoreService:
-        functions: [selectTask, selectAgent, selectSkill]
-        function_summary: Update selected IDs after loading collection-view state.
-  src/app/shared-services/codex-realtime.service.ts:
-    purpose: Start turns over HTTP, receive live events through Socket.IO, and log realtime lifecycle events.
-    classes:
-      CodexRealtimeService:
-        functions: [startTurn, subscribe, interrupt]
-  src/app/components/agent-client/agent-client.component.ts:
-    purpose: Render the dedicated Codex workflow console and consume live turn events.
-    classes:
-      AgentClientComponent:
-        functions: [submit, interrupt, handleEnter, completedSteps, progress, consumeEvent, advanceWorkflow, trackTool, markCurrentStep, newWorkflow, eventType, eventMessage, record, stringValue, log, reset, time, errorText]
-        function_summary: Start or interrupt REST turns and subscribe to their Socket.IO event room.
+        functions: [selectTask, selectAgent, selectSkill, refresh, createTask, addSkill, sendMessage]
+        function_summary: Loads snapshots, polls quietly for completion updates, and applies task/skill/message mutations.
   src/app/components/agent-card/agent-card.component.ts:
     purpose: Render a compact agent card.
     classes: [AgentCardComponent]
-  src/app/components/agent-client/agent-client.component.ts:
-    purpose: Render the dedicated full-page live Codex client route.
-    classes: [AgentClientComponent]
   src/app/components/agents-view/agents-view.component.ts:
-    purpose: Render the agents collection view.
-    classes: [AgentsViewComponent]
-        function_summary: Submit prompts and turn raw SDK event payloads into chat-visible text.
+    purpose: Render agent directory, selected agent metadata, skills, tools, history, and performance.
+    classes:
+      AgentsViewComponent:
+        functions: [select, isSelected]
   src/app/components/header/header.component.ts:
     purpose: Render and draw the controller navigation header.
     classes:
       HeaderComponent:
         functions: [ngAfterViewInit, navigate, selected, toggle, closeMenus]
-        function_summary: Draw the logo and manage navigation and header menus.
   src/app/components/memory-view/memory-view.component.ts:
-    purpose: Render runtime-memory summaries.
+    purpose: Render filterable runtime-memory records.
     classes: [MemoryViewComponent]
   src/app/components/messaging-portal/messaging-portal.component.ts:
-    purpose: Render the internal messaging portal.
-    classes: [MessagingPortalComponent]
+    purpose: Render message summaries, message records, queue state, and message send/debug forms.
+    classes:
+      MessagingPortalComponent:
+        functions: [sendMessage, sendDebugRequest]
   src/app/components/skill-card/skill-card.component.ts:
     purpose: Render a compact skill card.
     classes: [SkillCardComponent]
   src/app/components/skills-view/skills-view.component.ts:
-    purpose: Render the skills collection view.
-    classes: [SkillsViewComponent]
+    purpose: Render skill directory, skill content, assignment metadata, and create-skill form.
+    classes:
+      SkillsViewComponent:
+        functions: [select, isSelected, toggleAgent, addSkill]
   src/app/components/task-card/task-card.component.ts:
     purpose: Render a compact task card.
     classes: [TaskCardComponent]
   src/app/components/task-detail/task-detail.component.ts:
-    purpose: Render the selected task details.
-    classes: [TaskDetailComponent]
+    purpose: Render selected task details for legacy task-detail composition.
+    classes:
+      TaskDetailComponent:
+        functions: [toggleEdit, setPlan]
   src/app/components/task-thread/task-thread.component.ts:
-    purpose: Render task activity and task detail together.
+    purpose: Render live task columns, planned task details, task assignment, and generated task events.
     classes:
       TaskThreadComponent:
-        functions: [ngOnInit, choose]
-        function_summary: Select a task from route state and navigate between tasks.
+        functions: [ngOnInit, choose, isSelected, createTask, relatedMessages, eventDetail]
   src/app/components/work-logs-view/work-logs-view.component.ts:
-    purpose: Render work-log activity tabs.
+    purpose: Render filterable runtime and messaging work logs.
     classes: [WorkLogsViewComponent]
   src/app/components/workflows-view/workflows-view.component.ts:
-    purpose: Render workflow summaries.
-    classes: [WorkflowsViewComponent]
+    purpose: Render workflow summaries and resolved step lists.
+    classes:
+      WorkflowsViewComponent:
+        functions: [select]

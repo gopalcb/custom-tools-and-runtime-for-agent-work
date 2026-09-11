@@ -1,0 +1,162 @@
+version: 1.0.0
+updated_on: 2026-08-29
+name: layout-builder-theme-root
+source_of_truth:
+  html_reference:
+    - layout-builder/theme/theme-library.html
+    - layout-builder/theme/theme-ref.html
+purpose: >
+  Canonical design tokens and global constraints for agents generating UI in the
+  Layout Builder theme. Use this file first before reading any component file.
+
+design_intent:
+  mood:
+    - warm-neutral
+    - editorial
+    - restrained
+    - low-contrast
+    - utility-focused
+  summary: >
+    The UI should feel quiet, structured, and intentional. Surfaces are soft and
+    warm, actions use muted green, and borders carry most of the separation.
+
+global_rules:
+  must_use_component_files: true
+  do_not_invent_new_palette: true
+  do_not_invent_new_radius: true
+  do_not_invent_new_shadows_without_approval: true
+  do_not_replace_muted_green_accent: true
+  do_not_use_random_gradients: true
+  do_not_use_glassy_or_neon_styles: true
+  do_not_use_round_pills_for_standard_controls: true
+  standard_rectangular_radius_px: 4
+  circle_radius_percent: 50
+
+color:
+  bg: "#f1efe9"
+  surface: "#f8f6f1"
+  surface_soft: "#ece9e2"
+  surface_hover: "#e5e1d8"
+  surface_strong: "#dfd9cf"
+  text: "#242521"
+  text_soft: "#676961"
+  text_faint: "#92948d"
+  border: "#d8d3c9"
+  border_strong: "#c8c2b6"
+  accent: "#48675e"
+  accent_hover: "#3c574f"
+  accent_soft: "#dce6e1"
+  danger_soft: "#f0e3df"
+  danger_text: "#8b544e"
+  white_soft: "#f7f6f2"
+  focus_ring: "rgba(72, 103, 94, 0.08)"
+  panel_shadow: "rgba(37, 37, 32, 0.08)"
+  card_shadow: "rgba(37, 37, 32, 0.05)"
+
+typography:
+  font_family:
+    primary: 'Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+  font_sizes_px:
+    xxs: 8
+    xs: 9
+    sm: 10
+    md: 11
+    lg: 12
+    xl: 18
+  font_weights:
+    regular: 400
+    medium: 650
+    bold: 700
+    heavy: 800
+  line_height:
+    tight: 1.15
+    base: 1.4
+    relaxed: 1.5
+  lettering:
+    label_tracking_em: 0.08
+    eyebrow_tracking_em: 0.12
+  usage:
+    body_default_px: 12
+    small_copy_px: 9
+    helper_copy_px: 8
+    section_title_px: 18
+
+spacing:
+  unit_px: 4
+  scale_px:
+    - 4
+    - 6
+    - 8
+    - 10
+    - 12
+    - 14
+    - 16
+    - 18
+  default_section_gap_px: 16
+  default_component_gap_px: 10
+  compact_gap_px: 6
+  panel_padding_px: 16
+  sample_padding_px: 14
+  page_padding_desktop_px: 18
+  page_padding_mobile_px: 10
+
+radius:
+  rectangular_px: 4
+  circular_percent: 50
+
+borders:
+  default:
+    width_px: 1
+    color_token: border
+    style: solid
+  strong:
+    width_px: 1
+    color_token: border_strong
+    style: solid
+  subtle_divider:
+    width_px: 1
+    color: "rgba(216, 211, 201, 0.75)"
+    style: solid
+  preview_dashed:
+    width_px: 1
+    color_token: border_strong
+    style: dashed
+
+elevation:
+  panel: "0 18px 34px rgba(37, 37, 32, 0.08)"
+  card: "0 10px 20px rgba(37, 37, 32, 0.05)"
+  dropdown: "0 14px 28px rgba(37, 37, 32, 0.12)"
+
+interaction:
+  transition:
+    default: "140ms ease"
+  hover:
+    neutral_surface: surface_hover
+    accent_surface: accent_hover
+  focus:
+    border_color: accent
+    ring: "0 0 0 3px rgba(72, 103, 94, 0.08)"
+
+layout:
+  topbar_height_px: 54
+  hero_grid:
+    desktop_columns: "minmax(0, 1.25fr) minmax(280px, 0.75fr)"
+    responsive_breakpoint_px: 980
+  content_max_strategy: full_width
+  section_stack_gap_px: 16
+  component_grid_columns_desktop: 3
+  component_grid_columns_mobile: 1
+
+allowed_backgrounds:
+  - solid warm neutral
+  - subtle radial plus linear neutral blend
+  - soft vertical surface gradients
+
+forbidden_patterns:
+  - purple gradients
+  - saturated blue accents
+  - large glassmorphism blur panels
+  - random rounded pills
+  - dark mode reinterpretation without approval
+  - strong drop shadows on every component
+  - decorative icons unless the screen explicitly needs them

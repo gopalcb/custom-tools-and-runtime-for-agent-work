@@ -14,4 +14,5 @@ agent-msg = "agents_internal_messaging.cli:main"
 agent-hub = "agents_internal_messaging.hub:main"
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["."]
+include = ["agents_internal_messaging*"]

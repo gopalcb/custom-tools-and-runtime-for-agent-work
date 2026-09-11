@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import math
 import re
 from dataclasses import dataclass, field
@@ -11,6 +12,7 @@ from typing import Any, Iterable, Mapping, Sequence
 
 
 _TOKEN = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]*")
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -32,6 +34,7 @@ class MemoryRetriever:
 
     def __init__(self, memory_root: str | Path) -> None:
         self.memory_root = Path(memory_root).resolve()
+        logger.info("MemoryRetriever initialized", extra={"memory_root": str(self.memory_root)})
 
     def retrieve(
         self,
@@ -44,9 +47,11 @@ class MemoryRetriever:
         now: datetime | None = None,
     ) -> list[MemoryHit]:
         if limit <= 0:
+            logger.info("Memory retrieval skipped because limit is not positive", extra={"limit": limit})
             return []
         query_tokens = _tokens(query)
         if not query_tokens:
+            logger.info("Memory retrieval skipped because query has no tokens")
             return []
         roots = self._allowed_roots(allowed_paths)
         current_time = now or datetime.now(timezone.utc)
@@ -74,7 +79,9 @@ class MemoryRetriever:
                 )
             )
 
-        return sorted(results, key=lambda hit: (-hit.score, hit.path))[:limit]
+        hits = sorted(results, key=lambda hit: (-hit.score, hit.path))[:limit]
+        logger.info("Memory records ranked", extra={"result_count": len(hits)})
+        return hits
 
     def _allowed_roots(
         self, allowed_paths: Sequence[str | Path] | None

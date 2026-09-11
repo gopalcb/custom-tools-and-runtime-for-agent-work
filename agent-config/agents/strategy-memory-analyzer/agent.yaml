@@ -1,0 +1,17 @@
+version: 1
+
+id: strategy-memory-analyzer
+name: Strategy Memory Analyzer
+description: Analyze post-work user feedback and propose bounded strategy-memory updates.
+aliases:
+  - strategy memory analyzer
+  - feedback analyzer
+
+instructions: instructions.md
+workflow: default
+
+skills: []
+
+tools: []
+
+model_profile: standard
