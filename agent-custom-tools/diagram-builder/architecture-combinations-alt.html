@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Feedback And Memory Architecture Combinations</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <main class="diagram-page">
+    <div class="diagram-sheet">
+      <h1 class="diagram-title">Feedback And Memory Architecture Combinations</h1>
+      <p class="diagram-subtitle">Alternate static combinations for controller feedback, memory extraction, and review surfaces.</p>
+      <section class="db-diagram"><h2 class="db-diagram__heading">Feedback routing combination</h2><div class="db-component-stack"><div class="db-component db-component--node-only">
+<div class="db-component__node db-component__node--color-yellow" style="--db-x:50%;--db-y:50%;"><span class="db-component__text">Operator signal</span><span class="db-component__detail">approval, rework, or stop</span></div>
+</div>
+<div class="db-component db-component--double-node-component">
+  <svg class="db-component__connectors" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+    <line x1="50" y1="0" x2="50" y2="20" />
+    <line x1="27" y1="20" x2="73" y2="20" />
+    <line x1="27" y1="20" x2="27" y2="39" />
+    <line x1="73" y1="20" x2="73" y2="39" />
+    <line x1="27" y1="61" x2="27" y2="76" />
+    <line x1="73" y1="61" x2="73" y2="76" />
+    <line x1="27" y1="76" x2="73" y2="76" />
+    <line x1="50" y1="76" x2="50" y2="94" />
+  </svg>
+<span class="db-component__arrowhead" aria-hidden="true" style="--db-x:27%;--db-y:39%;"></span>
+<span class="db-component__arrowhead" aria-hidden="true" style="--db-x:73%;--db-y:39%;"></span>
+<span class="db-component__arrowhead" aria-hidden="true" style="--db-x:50%;--db-y:94%;"></span>
+<div class="db-component__node" style="--db-x:27%;--db-y:50%;"><span class="db-component__text">Controller UI</span><span class="db-component__detail">visible state</span></div>
+<div class="db-component__node" style="--db-x:73%;--db-y:50%;"><span class="db-component__text">Message queue</span><span class="db-component__detail">durable event</span></div>
+</div>
+<div class="db-component db-component--tri-node-component">
+  <svg class="db-component__connectors" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+    <line x1="50" y1="0" x2="50" y2="20" />
+    <line x1="16" y1="20" x2="84" y2="20" />
+    <line x1="16" y1="20" x2="16" y2="39" />
+    <line x1="50" y1="20" x2="50" y2="39" />
+    <line x1="84" y1="20" x2="84" y2="39" />
+    <line x1="16" y1="61" x2="16" y2="76" />
+    <line x1="50" y1="61" x2="50" y2="76" />
+    <line x1="84" y1="61" x2="84" y2="76" />
+    <line x1="16" y1="76" x2="84" y2="76" />
+    <line x1="50" y1="76" x2="50" y2="94" />
+  </svg>
+<span class="db-component__arrowhead" aria-hidden="true" style="--db-x:16%;--db-y:39%;"></span>
+<span class="db-component__arrowhead" aria-hidden="true" style="--db-x:50%;--db-y:39%;"></span>
+<span class="db-component__arrowhead" aria-hidden="true" style="--db-x:84%;--db-y:39%;"></span>
+<span class="db-component__arrowhead" aria-hidden="true" style="--db-x:50%;--db-y:94%;"></span>
+<div class="db-component__node db-component__node--color-green" style="--db-x:16%;--db-y:50%;"><span class="db-component__text">Strategy</span><span class="db-component__detail">decide</span></div>
+<div class="db-component__node db-component__node--color-blue" style="--db-x:50%;--db-y:50%;"><span class="db-component__text">Runtime</span><span class="db-component__detail">execute</span></div>
+<div class="db-component__node db-component__node--color-red" style="--db-x:84%;--db-y:50%;"><span class="db-component__text">Finalizer</span><span class="db-component__detail">summarize</span></div>
+</div>
+<div class="db-component db-component--node-with-down-arrow db-component--compact">
+  <svg class="db-component__connectors" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+    <line x1="50" y1="60" x2="50" y2="88" />
+  </svg>
+<span class="db-component__arrowhead" aria-hidden="true" style="--db-x:50%;--db-y:88%;"></span>
+<div class="db-component__node" style="--db-x:50%;--db-y:50%;"><span class="db-component__text">Rework pass</span><span class="db-component__detail">bounded retry</span></div>
+</div></div></section>
+<section class="db-diagram"><h2 class="db-diagram__heading">Memory extraction combination</h2><div class="db-component-stack"><div class="db-component db-component--horizontal-right-arrow">
+  <svg class="db-component__connectors" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+    <line x1="40" y1="50" x2="60" y2="50" />
+  </svg>
+<span class="db-component__arrowhead-horizontal db-component__arrowhead-horizontal--right" aria-hidden="true" style="--db-x:60%;--db-y:50%;"></span>
+<div class="db-component__node" style="--db-x:27%;--db-y:50%;"><span class="db-component__icon">E</span><span class="db-component__text">Events</span><span class="db-component__detail">verified facts</span></div>
+<div class="db-component__node" style="--db-x:73%;--db-y:50%;"><span class="db-component__icon">C</span><span class="db-component__text">Candidate</span><span class="db-component__detail">compact memory</span></div>
+</div>
+<div class="db-component db-component--horizontal-two-way-arrow">
+  <svg class="db-component__connectors" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+    <line x1="40" y1="50" x2="60" y2="50" />
+  </svg>
+<span class="db-component__arrowhead-horizontal db-component__arrowhead-horizontal--right" aria-hidden="true" style="--db-x:60%;--db-y:50%;"></span>
+<span class="db-component__arrowhead-horizontal db-component__arrowhead-horizontal--left" aria-hidden="true" style="--db-x:40%;--db-y:50%;"></span>
+<div class="db-component__node db-component__node--style-outline" style="--db-x:27%;--db-y:50%;"><span class="db-component__icon">H</span><span class="db-component__text">Human review</span><span class="db-component__detail">keep or skip</span></div>
+<div class="db-component__node db-component__node--style-strong" style="--db-x:73%;--db-y:50%;"><span class="db-component__icon">M</span><span class="db-component__text">Memory cache</span><span class="db-component__detail">reusable context</span></div>
+</div>
+<div class="db-component db-component--horizontal-left-arrow">
+  <svg class="db-component__connectors" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+    <line x1="40" y1="50" x2="60" y2="50" />
+  </svg>
+<span class="db-component__arrowhead-horizontal db-component__arrowhead-horizontal--left" aria-hidden="true" style="--db-x:40%;--db-y:50%;"></span>
+<div class="db-component__node" style="--db-x:27%;--db-y:50%;"><span class="db-component__icon">N</span><span class="db-component__text">Next run</span><span class="db-component__detail">receives hint</span></div>
+<div class="db-component__node" style="--db-x:73%;--db-y:50%;"><span class="db-component__icon">R</span><span class="db-component__text">Stored record</span><span class="db-component__detail">source evidence</span></div>
+</div>
+<div class="db-component db-component--double-node-without-bottom-line">
+  <svg class="db-component__connectors" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+    <line x1="50" y1="0" x2="50" y2="20" />
+    <line x1="27" y1="20" x2="73" y2="20" />
+    <line x1="27" y1="20" x2="27" y2="39" />
+    <line x1="73" y1="20" x2="73" y2="39" />
+    <line x1="27" y1="60" x2="27" y2="78" />
+    <line x1="73" y1="60" x2="73" y2="78" />
+  </svg>
+<span class="db-component__arrowhead" aria-hidden="true" style="--db-x:27%;--db-y:39%;"></span>
+<span class="db-component__arrowhead" aria-hidden="true" style="--db-x:73%;--db-y:39%;"></span>
+<span class="db-component__arrowhead" aria-hidden="true" style="--db-x:27%;--db-y:78%;"></span>
+<span class="db-component__arrowhead" aria-hidden="true" style="--db-x:73%;--db-y:78%;"></span>
+<div class="db-component__node" style="--db-x:27%;--db-y:50%;"><span class="db-component__text">Summary</span></div>
+<div class="db-component__node" style="--db-x:73%;--db-y:50%;"><span class="db-component__text">Evidence</span></div>
+<div class="db-component__caption" style="--db-x:27%;--db-y:91%;">user-facing note</div>
+<div class="db-component__caption" style="--db-x:73%;--db-y:91%;">cited event paths</div></div></div></section>
+<section class="db-diagram"><h2 class="db-diagram__heading">Review artifact combination</h2><div class="db-component-stack"><div class="db-component db-component--square-with-text">
+<div class="db-component__node db-component__node--square db-component__node--color-neutral" style="--db-x:50%;--db-y:50%;"><span class="db-component__text">Draft</span><span class="db-component__detail">local file</span></div>
+</div>
+<div class="db-component db-component--square-with-icon-detail">
+<div class="db-component__node db-component__node--square db-component__node--color-green db-component__node--style-strong" style="--db-x:50%;--db-y:50%;"><span class="db-component__icon">T</span><span class="db-component__text">Tests</span><span class="db-component__detail">focused checks</span></div>
+</div>
+<div class="db-component db-component--node-with-top-arrow">
+  <svg class="db-component__connectors" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+    <line x1="50" y1="8" x2="50" y2="39" />
+  </svg>
+<span class="db-component__arrowhead" aria-hidden="true" style="--db-x:50%;--db-y:39%;"></span>
+<div class="db-component__node" style="--db-x:50%;--db-y:50%;"><span class="db-component__text">Accepted artifact</span><span class="db-component__detail">verified output</span></div>
+</div>
+<div class="db-component db-component--node-with-up-down-arrow">
+  <svg class="db-component__connectors" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+    <line x1="50" y1="4" x2="50" y2="39" />
+    <line x1="50" y1="61" x2="50" y2="84" />
+  </svg>
+<span class="db-component__arrowhead" aria-hidden="true" style="--db-x:50%;--db-y:39%;"></span>
+<span class="db-component__arrowhead" aria-hidden="true" style="--db-x:50%;--db-y:84%;"></span>
+<div class="db-component__node" style="--db-x:50%;--db-y:51%;"><span class="db-component__text">Follow-up</span><span class="db-component__detail">iterate only if needed</span></div>
+</div></div></section>
+<section class="db-diagram"><h2 class="db-diagram__heading">Agent use summary</h2><div class="db-flow"><div class="db-label db-label--upper">Pick an architecture intent</div>
+<div class="db-connector db-connector--branch-right" aria-hidden="true"><div class="db-connector__spine"></div><ul class="db-connector__branches"><li class="db-connector__branch">flow</li>
+<li class="db-connector__branch">tree</li>
+<li class="db-connector__branch">bus</li>
+<li class="db-connector__branch">component stack</li></ul></div>
+<div class="db-label db-label--normal">Choose the smallest matching static component</div>
+<div class="db-connector db-connector--down" aria-hidden="true"></div>
+<div class="db-label db-label--lower">Render the YAML and inspect the HTML</div></div></section>
+    </div>
+  </main>
+</body>
+</html>

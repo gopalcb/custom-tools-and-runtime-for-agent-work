@@ -1,0 +1,147 @@
+library:
+  name: components
+  description: Aggregate reusable component catalog for Diagram Builder.
+  sources:
+    - core-components.yaml
+    - composite-components.yaml
+  note: Keep this aggregate in sync with category files so default CLI use can load one stable catalog.
+components:
+  label-upper:
+    category: core-label
+    class: db-label db-label--upper
+    description: Uppercase stage label for prompts, phases, and system milestones.
+  label-normal:
+    category: core-label
+    class: db-label db-label--normal
+    description: Standard centered label for process nodes.
+  label-lower:
+    category: core-label
+    class: db-label db-label--lower
+    description: Lower-emphasis label for concrete agents, files, and leaf targets.
+  down-arrow:
+    category: core-connector
+    class: db-connector db-connector--down
+    description: Vertical connector with a downward arrowhead.
+  down-arrow-with-right-branches:
+    category: core-connector
+    class: db-connector db-connector--branch-right
+    description: Vertical connector with right-side branch rows and a downward arrowhead.
+  tree-root:
+    category: tree
+    class: db-tree__root
+    description: Root label for a repository or nested tree diagram.
+  tree-file:
+    category: tree
+    class: db-tree__file
+    description: Leaf file entry in a tree diagram.
+  tree-folder:
+    category: tree
+    class: db-tree__folder
+    description: Folder entry in a tree diagram.
+  bus-source:
+    category: event-bus
+    class: db-bus__source
+    description: Source event node feeding a shared event hub.
+  bus-hub:
+    category: event-bus
+    class: db-bus__hub
+    description: Central event hub node.
+  bus-output:
+    category: event-bus
+    class: db-bus__output
+    description: Output artifact or subscriber node.
+  bus-artifact:
+    category: event-bus
+    class: db-bus__artifact
+    description: Post-completion artifact node.
+  node-only:
+    category: single-node
+    class: db-component db-component--node-only
+    description: Plain rectangle for use above or below compound components that own their own connector arrows.
+    node_count: 1
+  square-with-text:
+    category: square-node
+    class: db-component db-component--square-with-text
+    description: Square text block for compact states, concepts, and endpoints.
+    node_count: 1
+    node_options:
+      detail: short explanatory label
+      size: sm | md | lg
+      color: green | blue | red | yellow | neutral
+      style: soft | strong | outline | dashed
+  square-with-icon-detail:
+    category: square-node
+    class: db-component db-component--square-with-icon-detail
+    description: Square text block with an icon, label, and detail line.
+    node_count: 1
+    node_options:
+      icon: short symbol or text badge
+      detail: short explanatory label
+      size: sm | md | lg
+      color: green | blue | red | yellow | neutral
+      style: soft | strong | outline | dashed
+  tri-node-component:
+    category: composite
+    class: db-component db-component--tri-node-component
+    description: Three centered nodes fed by a top rail and merged into a bottom rail with a centered down arrow.
+    node_count: 3
+  double-node-component:
+    category: composite
+    class: db-component db-component--double-node-component
+    description: Two centered nodes fed by a top rail and merged into a bottom rail with a centered down arrow.
+    node_count: 2
+  node-with-up-down-arrow:
+    category: composite-single
+    class: db-component db-component--node-with-up-down-arrow
+    description: Single node with an incoming top arrow touching the top border and an outgoing down arrow from the bottom border.
+    node_count: 1
+  node-with-down-arrow:
+    category: composite-single
+    class: db-component db-component--node-with-down-arrow
+    description: Single node with a down arrow starting from the bottom border.
+    node_count: 1
+  node-with-top-arrow:
+    category: composite-single
+    class: db-component db-component--node-with-top-arrow
+    description: Single node with a top arrow pointing to and touching the top border.
+    node_count: 1
+  tri-node-without-bottom-line:
+    category: composite-output
+    class: db-component db-component--tri-node-without-bottom-line
+    description: Three centered nodes fed by a top rail, with optional per-node down arrows and no bottom rail.
+    node_count: 3
+  double-node-without-bottom-line:
+    category: composite-output
+    class: db-component db-component--double-node-without-bottom-line
+    description: Two centered nodes fed by a top rail, with optional per-node down arrows and no bottom rail.
+    node_count: 2
+  horizontal-right-arrow:
+    category: horizontal-connector
+    class: db-component db-component--horizontal-right-arrow
+    description: Two nodes connected by a left-to-right arrow.
+    node_count: 2
+  horizontal-left-arrow:
+    category: horizontal-connector
+    class: db-component db-component--horizontal-left-arrow
+    description: Two nodes connected by a right-to-left arrow.
+    node_count: 2
+  horizontal-two-way-arrow:
+    category: horizontal-connector
+    class: db-component db-component--horizontal-two-way-arrow
+    description: Two nodes connected by arrows pointing both directions.
+    node_count: 2
+  animated-horizontal-right-arrow:
+    category: horizontal-connector
+    class: db-component db-component--animated-horizontal-right-arrow
+    description: Two nodes connected by a moving left-to-right flow line.
+    node_count: 2
+  animated-horizontal-left-arrow:
+    category: horizontal-connector
+    class: db-component db-component--animated-horizontal-left-arrow
+    description: Two nodes connected by a moving right-to-left flow line.
+    node_count: 2
+  animated-horizontal-two-way-arrow:
+    category: horizontal-connector
+    class: db-component db-component--animated-horizontal-two-way-arrow
+    description: Two nodes connected by animated bidirectional flow.
+    node_count: 2

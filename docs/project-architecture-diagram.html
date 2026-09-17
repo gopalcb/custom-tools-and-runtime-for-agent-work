@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Custom Agent Tools and Runtime</title>
+  <link rel="stylesheet" href="../agent-custom-tools/diagram-builder/assets/styles.css" />
+</head>
+<body>
+  <main class="diagram-page">
+    <div class="diagram-sheet">
+      <h1 class="diagram-title">Custom Agent Tools and Runtime</h1>
+      <p class="diagram-subtitle">A compact control plane with explicit workflows, two messaging surfaces, and inspectable local state.</p>
+      <section class="db-diagram"><h2 class="db-diagram__heading">End-to-end runtime and messaging architecture</h2>
+<div class="db-bus">
+  
+  <svg class="db-bus__connectors" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+    <defs>
+      <marker id="db-arrow" viewBox="0 0 12 9" refX="6" refY="0" markerWidth="12" markerHeight="9" orient="0">
+        <path d="M0,0 L12,0 L6,9 Z" />
+      </marker>
+    </defs>
+    <line x1="50" y1="9" x2="50" y2="15" />
+    <line x1="22.0" y1="15" x2="78.0" y2="15" />
+    <line x1="22.0" y1="15" x2="22.0" y2="19" /><line x1="22.0" y1="25" x2="22.0" y2="31" />
+<line x1="50.0" y1="15" x2="50.0" y2="19" /><line x1="50.0" y1="25" x2="50.0" y2="31" />
+<line x1="78.0" y1="15" x2="78.0" y2="19" /><line x1="78.0" y1="25" x2="78.0" y2="31" />
+    <line x1="22.0" y1="31" x2="78.0" y2="31" />
+    <line x1="50" y1="31" x2="50" y2="35" marker-end="url(#db-arrow)" />
+    <line x1="50" y1="41" x2="50" y2="47" />
+    <line x1="34.0" y1="47" x2="66.0" y2="47" />
+    <line x1="34.0" y1="47" x2="34.0" y2="52" />
+<line x1="66.0" y1="47" x2="66.0" y2="52" />
+    <line x1="50" y1="58" x2="50" y2="67" marker-end="url(#db-arrow)" />
+    <line x1="50" y1="73" x2="50" y2="79" />
+    <line x1="25.0" y1="79" x2="75.0" y2="79" />
+    <line x1="25.0" y1="79" x2="25.0" y2="80" />
+<line x1="50.0" y1="79" x2="50.0" y2="80" />
+<line x1="75.0" y1="79" x2="75.0" y2="80" />
+    <line x1="75.0" y1="84" x2="75.0" y2="91" marker-end="url(#db-arrow)" />
+  </svg>
+
+  <div class="db-bus__node db-bus__runtime" style="--db-x:50%;--db-y:6%;">CompactAgentRuntime</div>
+  <div class="db-bus__node db-bus__source" style="--db-x:22.0%;--db-y:22%;">Operator or CLI</div>
+<div class="db-bus__node db-bus__source" style="--db-x:50.0%;--db-y:22%;">Workflow step</div>
+<div class="db-bus__node db-bus__source" style="--db-x:78.0%;--db-y:22%;">Agent or tool</div>
+  <div class="db-bus__node db-bus__hub" style="--db-x:50%;--db-y:38%;">Workflow and message control plane</div>
+  <div class="db-bus__node db-bus__output" style="--db-x:34.0%;--db-y:55%;">MQ topic dispatch</div><div class="db-bus__caption" style="--db-x:34.0%;--db-y:65%;">bounded handlers</div>
+<div class="db-bus__node db-bus__output" style="--db-x:66.0%;--db-y:55%;">Agent inbox bus</div><div class="db-bus__caption" style="--db-x:66.0%;--db-y:65%;">reply threads</div>
+  <div class="db-bus__node" style="--db-x:50%;--db-y:70%;">Durable local state</div>
+  <div class="db-bus__node db-bus__artifact" style="--db-x:25.0%;--db-y:82%;">event snapshots</div>
+<div class="db-bus__node db-bus__artifact" style="--db-x:50.0%;--db-y:82%;">task records</div>
+<div class="db-bus__node db-bus__artifact" style="--db-x:75.0%;--db-y:82%;">memory records</div>
+  <div class="db-bus__caption" style="--db-x:75.0%;--db-y:94%;">inspect and replay</div>
+</div>
+</section>
+    </div>
+  </main>
+</body>
+</html>

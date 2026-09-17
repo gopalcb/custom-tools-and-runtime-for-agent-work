@@ -1,0 +1,168 @@
+title: Component Catalog and Orchestration
+subtitle: Available diagram families, reusable components, and the rendering path.
+diagrams:
+  - type: component_gallery
+    title: Component guide
+
+  - type: flow
+    title: Rendering orchestration
+    steps:
+      - component: label-upper
+        text: YAML INPUT
+      - component: down-arrow-with-right-branches
+        branches:
+          - diagram type
+          - component name
+          - node data
+      - component: label-normal
+        text: Validate document
+      - component: down-arrow-with-right-branches
+        branches:
+          - supported type
+          - known component
+          - correct node count
+      - component: label-normal
+        text: Render HTML
+      - component: down-arrow
+      - component: label-lower
+        text: CSS gives stable geometry
+
+  - type: tree
+    title: Component families
+    root:
+      name: components.yaml
+      children:
+        - name: flow
+          children:
+            - name: label-upper
+            - name: label-normal
+            - name: label-lower
+            - name: down-arrow
+            - name: down-arrow-with-right-branches
+        - name: tree
+          children:
+            - name: tree-root
+            - name: tree-folder
+            - name: tree-file
+        - name: event-bus
+          children:
+            - name: bus-source
+            - name: bus-hub
+            - name: bus-output
+            - name: bus-artifact
+        - name: architecture
+          children:
+            - name: node-only
+            - name: tri-node-component
+            - name: double-node-component
+            - name: no-bottom-line variants
+        - name: compact additions
+          children:
+            - name: horizontal arrows
+            - name: animated arrows
+            - name: square nodes
+
+  - type: event_bus
+    title: Renderer runtime shape
+    runtime: Diagram request
+    sources:
+      - YAML document
+      - component catalog
+      - stylesheet
+    hub: Renderer
+    outputs:
+      - name: validated payload
+      - name: HTML document
+        child: article diagram
+    post_completion:
+      name: Reader output
+      artifacts:
+        - clean layout
+        - stable arrows
+        - reusable examples
+      metric_child: faster future diagrams
+
+  - type: component_stack
+    title: Vertical composition
+    components:
+      - component: node-only
+        compact: true
+        nodes:
+          - Request
+      - component: tri-node-component
+        compact: true
+        nodes:
+          - Context
+          - Pattern
+          - Rule
+      - component: node-only
+        compact: true
+        nodes:
+          - Component choice
+      - component: double-node-without-bottom-line
+        nodes:
+          - text: HTML
+            down_arrow: true
+            down_label: render
+          - text: CSS
+            down_arrow: true
+            down_label: style
+
+  - type: component
+    title: Horizontal right
+    component: horizontal-right-arrow
+    nodes:
+      - text: YAML
+        icon: Y
+        detail: source
+        color: green
+      - text: HTML
+        icon: H
+        detail: output
+        color: blue
+
+  - type: component
+    title: Horizontal left
+    component: horizontal-left-arrow
+    nodes:
+      - text: Article
+        icon: A
+        detail: reads diagram
+        style: outline
+      - text: Diagram
+        icon: D
+        detail: explains idea
+        style: strong
+
+  - type: component
+    title: Animated bidirectional
+    component: animated-horizontal-two-way-arrow
+    nodes:
+      - text: Memory
+        icon: M
+        detail: learns pattern
+        color: yellow
+      - text: Catalog
+        icon: C
+        detail: stores pattern
+        color: red
+
+  - type: component
+    title: Square text state
+    component: square-with-text
+    nodes:
+      - text: Stable
+        detail: fixed geometry
+        color: neutral
+        style: dashed
+
+  - type: component
+    title: Square icon detail state
+    component: square-with-icon-detail
+    nodes:
+      - text: Reuse
+        icon: R
+        detail: named component
+        size: lg
+        color: blue
+        style: strong

@@ -1,0 +1,23 @@
+title: Custom Agent Tools and Runtime
+subtitle: A compact control plane with explicit workflows, two messaging surfaces, and inspectable local state.
+diagrams:
+  - type: event_bus
+    title: End-to-end runtime and messaging architecture
+    runtime: CompactAgentRuntime
+    sources:
+      - Operator or CLI
+      - Workflow step
+      - Agent or tool
+    hub: Workflow and message control plane
+    outputs:
+      - name: MQ topic dispatch
+        child: bounded handlers
+      - name: Agent inbox bus
+        child: reply threads
+    post_completion:
+      name: Durable local state
+      artifacts:
+        - event snapshots
+        - task records
+        - memory records
+      metric_child: inspect and replay

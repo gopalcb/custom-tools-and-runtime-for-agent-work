@@ -1,0 +1,88 @@
+project: diagram-builder
+
+files:
+  diagram_builder.py:
+    purpose: Load diagram YAML, validate supported diagram types, and render HTML output.
+    functions:
+      load_yaml:
+        summary: Load a YAML mapping from disk.
+      load_component_catalog:
+        summary: Load component definitions from one YAML file or a catalog directory.
+      validate_document:
+        summary: Validate the top-level diagram document and each diagram block.
+      validate_architecture_component:
+        summary: Validate one reusable architecture component and its node count.
+      validate_tree_node:
+        summary: Validate one tree node recursively.
+      render_label:
+        summary: Render one catalog-backed label.
+      render_connector:
+        summary: Render a vertical connector, optionally with branch rows.
+      render_flow:
+        summary: Render a vertical flow diagram.
+      render_tree_node:
+        summary: Render one tree node and its descendants.
+      render_tree:
+        summary: Render a repository-style tree diagram.
+      render_event_bus:
+        summary: Render the event hub and post-completion diagram.
+      render_architecture_component:
+        summary: Render one fixed-geometry architecture component.
+      render_component_stack:
+        summary: Render several architecture components as one stacked diagram.
+      render_component_gallery:
+        summary: Render a review gallery for architecture components.
+      normalize_component_nodes:
+        summary: Normalize string and mapping node payloads.
+      component_positions:
+        summary: Return stable x positions for one-, two-, and three-node components.
+      render_component_node:
+        summary: Render one positioned architecture component node.
+      render_component_caption:
+        summary: Render a caption beneath a component down arrow.
+      render_component_connectors:
+        summary: Render connector geometry for architecture components.
+      render_component_arrow_line:
+        summary: Render one vertical arrow shaft.
+      render_component_arrowhead:
+        summary: Render one CSS-border vertical arrowhead.
+      render_horizontal_connector:
+        summary: Render horizontal arrow shafts and arrowheads.
+      render_horizontal_arrowhead:
+        summary: Render one CSS-border horizontal arrowhead.
+      css_token:
+        summary: Convert node option values into conservative CSS class tokens.
+      render_top_connector_lines:
+        summary: Render shared top rails for compound components.
+      render_bottom_connector_lines:
+        summary: Render bottom rails and outgoing arrows for compound components.
+      distribute_positions:
+        summary: Distribute node positions across a bounded range.
+      render_positioned_node:
+        summary: Render an absolutely positioned event bus node.
+      render_positioned_caption:
+        summary: Render an absolutely positioned event bus caption.
+      render_positioned_output:
+        summary: Render one event bus output and optional child label.
+      render_event_bus_connectors:
+        summary: Render connector lines for the event bus diagram.
+      render_diagram:
+        summary: Dispatch one diagram block to its renderer.
+      render_document:
+        summary: Render a complete HTML document.
+      build_parser:
+        summary: Build the command-line parser.
+      main:
+        summary: Load input, render HTML, and write the output file.
+
+  main.py:
+    purpose: Thin CLI facade for the diagram builder.
+    functions: {}
+
+  test.py:
+    purpose: Local smoke tests for the compact diagram builder.
+    functions:
+      test_new_components_render:
+        summary: Verify the sample renders expected static component families.
+      main:
+        summary: Run smoke tests from the command line.

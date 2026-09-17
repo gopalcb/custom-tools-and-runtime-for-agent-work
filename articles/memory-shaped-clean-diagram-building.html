@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How Memory Over Time Shaped a Cleaner Diagram Builder</title>
+  <script src="runtime-config.js"></script>
+  <script src="page-view-logging.js" defer></script>
+  <style>
+    :root {
+      color-scheme: light;
+      --text: #20231f;
+      --muted: #62665f;
+      --border: #d8d3c9;
+      --soft: #f8f6f1;
+      --accent: #48675e;
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    body {
+      margin: 0;
+      color: var(--text);
+      background: #fffdf8;
+    }
+    main {
+      width: min(880px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 48px 0 72px;
+    }
+    h1 {
+      max-width: 760px;
+      margin: 0 0 14px;
+      font-size: 34px;
+      line-height: 1.08;
+      letter-spacing: 0;
+    }
+    h2 {
+      margin: 36px 0 10px;
+      font-size: 19px;
+      line-height: 1.25;
+    }
+    p, li {
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.65;
+    }
+    a {
+      color: var(--accent);
+      font-weight: 700;
+    }
+    .lede {
+      max-width: 720px;
+      color: var(--text);
+      font-size: 18px;
+      line-height: 1.55;
+    }
+    .diagram-frame {
+      width: 100%;
+      height: 980px;
+      margin: 28px 0 6px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--soft);
+    }
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.95em;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>How Memory Over Time Shaped a Cleaner Diagram Builder</h1>
+    <p class="lede">Good diagrams rarely start clean. They become clean when the system remembers what worked before and turns repeated choices into named parts.</p>
+
+    <p>At first, every diagram feels like a one-off. A box goes here. An arrow goes there. A label needs a little more space. Then the next diagram needs almost the same thing, but not quite. After a few rounds, the work either becomes messy, or the system starts to remember.</p>
+
+    <p>This builder follows the second path. Memory turns repeated diagram choices into reusable components. Once a pattern is named, the next diagram does not need to rediscover it.</p>
+
+    <p><a href="memory-shaped-clean-diagram-building-diagrams.html">Open the generated diagram page</a> or inspect the <a href="memory-shaped-clean-diagram-building-diagrams.yaml">source YAML</a>.</p>
+    <iframe class="diagram-frame" src="memory-shaped-clean-diagram-building-diagrams.html" title="Memory shaped clean diagram building diagrams"></iframe>
+
+    <h2>The First Memory Is Usually a Shape</h2>
+    <p>A useful diagram pattern often starts as a small visual memory. Maybe three inputs always meet at one runtime. Maybe two outputs always leave a hub. Maybe a tree view is the clearest way to explain files.</p>
+    <p>The builder captures those decisions as components: plain nodes, fan-in groups, fan-out groups, flows, trees, event buses, horizontal arrows, and square text blocks.</p>
+
+    <h2>Clean Diagrams Come From Fewer Choices</h2>
+    <p>The goal is not to make every diagram look the same. The goal is to make the basic choices boring in a good way. If a node has one job, use a plain node. If three things meet, use a <code>tri-node-component</code>. If two things talk back and forth, use a two-way horizontal arrow.</p>
+
+    <h2>Memory Also Improves Language</h2>
+    <p>The builder does not only remember shapes. It also encourages short labels. Long labels make diagrams heavy. Short labels let the structure speak, while detail lines carry the extra meaning.</p>
+
+    <h2>Different Diagrams Carry Different Kinds of Thought</h2>
+    <ul>
+      <li>A flow diagram is good for a sequence.</li>
+      <li>A tree diagram is good for ownership and structure.</li>
+      <li>An event-bus diagram is good for movement through a runtime.</li>
+      <li>A component stack is good for showing how stable parts compose.</li>
+      <li>A horizontal arrow is good for a relationship between two peers.</li>
+      <li>A square is good for a small state, mode, or concept.</li>
+    </ul>
+
+    <h2>The System Gets Cleaner Because It Can Say No</h2>
+    <p>Memory is also about avoiding messy combinations. A compound component already owns its connector lines, so the node above it can usually be plain. The node below it can be plain too. The component carries the arrows, so neighboring nodes do not add duplicate arrows.</p>
+
+    <h2>A Small Loop Makes the Builder Better</h2>
+    <p>The loop is simple: make a diagram, notice what repeats, name the repeated shape, add it to the catalog, use it again, and simplify the next diagram.</p>
+    <p>Over time, the catalog becomes a memory of good decisions. That memory shaped this builder into something cleaner. It keeps the author close to the idea, and far from tiny layout arguments.</p>
+  </main>
+</body>
+</html>

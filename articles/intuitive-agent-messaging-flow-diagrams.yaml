@@ -1,0 +1,129 @@
+title: Intuitive Agent Messaging Flow
+subtitle: How agent and workflow requests become topic-routed tool calls with durable state.
+diagrams:
+  - type: flow
+    title: Message lifecycle
+    steps:
+      - component: label-upper
+        text: CALLER POSTS MESSAGE
+      - component: down-arrow-with-right-branches
+        branches:
+          - topic
+          - sender
+          - payload
+          - optional event id
+      - component: label-normal
+        text: MQ builds event
+      - component: down-arrow
+      - component: label-normal
+        text: Persist pending state
+      - component: down-arrow
+      - component: label-normal
+        text: Queue worker processes event
+      - component: down-arrow-with-right-branches
+        branches:
+          - mark processing
+          - dispatch by topic
+          - attach result
+      - component: label-lower
+        text: Persist processed state
+
+  - type: event_bus
+    title: Message as control plane
+    runtime: Agent runtime
+    sources:
+      - Agent request
+      - Workflow step
+      - Operator API
+    hub: MQ event envelope
+    outputs:
+      - name: Topic handler
+        child: tool result
+      - name: Event snapshot
+        child: .agent-state/messages
+    post_completion:
+      name: Inspectable state
+      artifacts:
+        - task records
+        - memory records
+        - workflow breakdown
+      metric_child: operator trace
+
+  - type: tree
+    title: Durable state shape
+    root:
+      name: .agent-state/
+      children:
+        - name: messages/
+          children:
+            - name: events-read-file/
+              children:
+                - name: evt-123.json
+            - name: events-run-workflow/
+              children:
+                - name: evt-456.json
+        - name: task/
+          children:
+            - name: custom-agent-tools-and-runtime/
+              children:
+                - name: task.json
+        - name: cache/
+          children:
+            - name: memory/
+              children:
+                - name: records/
+
+  - type: component_stack
+    title: How a tool call rides inside a message
+    components:
+      - component: node-only
+        compact: true
+        nodes:
+          - Agent or workflow
+      - component: tri-node-component
+        compact: true
+        nodes:
+          - text: Topic
+            detail: route
+          - text: Payload
+            detail: arguments
+          - text: Sender
+            detail: trace
+      - component: node-only
+        compact: true
+        nodes:
+          - MQ handler
+      - component: double-node-without-bottom-line
+        nodes:
+          - text: Tool function
+            down_arrow: true
+            down_label: bounded work
+          - text: Result
+            down_arrow: true
+            down_label: persisted
+
+  - type: component
+    title: Boundary between intent and permission
+    component: horizontal-right-arrow
+    nodes:
+      - text: Agent intent
+        icon: A
+        detail: asks for work
+        color: green
+      - text: Handler policy
+        icon: H
+        detail: known topics only
+        color: blue
+
+  - type: component
+    title: Agent-to-agent replies
+    component: horizontal-two-way-arrow
+    nodes:
+      - text: Sender
+        icon: S
+        detail: original message
+        style: outline
+      - text: Recipient
+        icon: R
+        detail: reply_to thread
+        style: strong

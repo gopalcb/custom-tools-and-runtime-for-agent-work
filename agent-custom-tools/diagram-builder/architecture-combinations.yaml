@@ -1,0 +1,163 @@
+title: Agent Runtime Architecture Combinations
+subtitle: Reusable static component combinations for planning, runtime, messaging, and finalization diagrams.
+diagrams:
+  - type: flow
+    title: Workflow intake to finalization
+    steps:
+      - component: label-upper
+        text: User request
+      - component: down-arrow
+      - component: label-normal
+        text: Workflow intake and inline plan
+      - component: down-arrow-with-right-branches
+        branches:
+          - source maps
+          - tests
+          - memory hints
+      - component: label-normal
+        text: Codex execution
+      - component: down-arrow
+      - component: label-lower
+        text: Verified final artifact
+
+  - type: tree
+    title: Diagram builder source layout
+    root:
+      name: diagram-builder
+      children:
+        - name: assets
+          children:
+            - name: styles.css
+        - name: libs
+          children:
+            - name: components.yaml
+        - name: diagram_builder.py
+        - name: sample-new-components.yaml
+        - name: architecture-combinations.yaml
+
+  - type: event_bus
+    title: Runtime event fan-out
+    runtime: Agent Runtime
+    sources:
+      - Codex stream
+      - Tool calls
+      - Workflow state
+    hub: RuntimeEvent hub
+    outputs:
+      - name: Controller UI
+        child: live status
+      - name: Run artifacts
+        child: logs and summaries
+      - name: Memory candidates
+        child: extraction review
+    post_completion:
+      name: Finalization
+      artifacts:
+        - summary.md
+        - metrics.json
+        - records.jsonl
+      metric_child: next run context
+
+  - type: component_stack
+    title: Agent work execution stack
+    components:
+      - component: node-only
+        nodes:
+          - text: Request contract
+            detail: user intent and constraints
+            style: strong
+      - component: tri-node-component
+        nodes:
+          - text: Plan
+            detail: scope
+            color: green
+          - text: Inspect
+            detail: evidence
+            color: blue
+          - text: Patch
+            detail: changes
+            color: yellow
+      - component: node-with-up-down-arrow
+        compact: true
+        nodes:
+          - text: Validation gate
+            icon: V
+            detail: compile and smoke checks
+      - component: double-node-component
+        nodes:
+          - text: Durable event log
+            detail: events.jsonl
+          - text: Visible surface
+            detail: generated HTML
+      - component: tri-node-without-bottom-line
+        nodes:
+          - text: Summary
+            down_arrow: true
+            down_label: final answer
+          - text: Metrics
+            down_arrow: true
+            down_label: work memory
+          - text: Artifacts
+            down_arrow: true
+            down_label: browser view
+
+  - type: component_stack
+    title: Asset publishing stack
+    components:
+      - component: square-with-text
+        nodes:
+          - text: Ready
+            detail: static asset
+            color: neutral
+            style: dashed
+      - component: horizontal-right-arrow
+        nodes:
+          - text: Catalog
+            icon: C
+            detail: components.yaml
+            color: green
+          - text: Renderer
+            icon: R
+            detail: HTML output
+            color: blue
+      - component: horizontal-two-way-arrow
+        nodes:
+          - text: Agent
+            icon: A
+            detail: selects primitive
+            style: strong
+          - text: Diagram
+            icon: D
+            detail: conveys system shape
+            style: outline
+      - component: square-with-icon-detail
+        nodes:
+          - text: Review
+            icon: Q
+            detail: inspect before use
+            size: lg
+            color: yellow
+      - component: node-with-down-arrow
+        nodes:
+          - text: Chosen combination
+            detail: architecture page
+      - component: double-node-without-bottom-line
+        nodes:
+          - text: Source YAML
+            down_arrow: true
+            down_label: reproducible input
+          - text: HTML
+            down_arrow: true
+            down_label: shareable view
+      - component: horizontal-left-arrow
+        nodes:
+          - text: Consumer UI
+            icon: U
+            detail: reads static output
+          - text: Source of truth
+            icon: S
+            detail: declarative YAML
+      - component: node-with-top-arrow
+        nodes:
+          - text: Published asset
+            detail: no animation needed

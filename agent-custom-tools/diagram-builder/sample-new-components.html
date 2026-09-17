@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Compact Diagram Builder New Components</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <main class="diagram-page">
+    <div class="diagram-sheet">
+      <h1 class="diagram-title">Compact Diagram Builder New Components</h1>
+      <p class="diagram-subtitle">Horizontal, bidirectional, square, icon, detail, size, color, and style variants.</p>
+      <section class="db-diagram"><h2 class="db-diagram__heading">Horizontal right arrow</h2><div class="db-component db-component--horizontal-right-arrow">
+  <svg class="db-component__connectors" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+    <line x1="40" y1="50" x2="60" y2="50" />
+  </svg>
+<span class="db-component__arrowhead-horizontal db-component__arrowhead-horizontal--right" aria-hidden="true" style="--db-x:60%;--db-y:50%;"></span>
+<div class="db-component__node db-component__node--color-green" style="--db-x:27%;--db-y:50%;"><span class="db-component__icon">I</span><span class="db-component__text">Intake</span><span class="db-component__detail">prompt</span></div>
+<div class="db-component__node db-component__node--color-blue" style="--db-x:73%;--db-y:50%;"><span class="db-component__icon">P</span><span class="db-component__text">Planner</span><span class="db-component__detail">next action</span></div>
+</div></section>
+<section class="db-diagram"><h2 class="db-diagram__heading">Horizontal left arrow</h2><div class="db-component db-component--horizontal-left-arrow">
+  <svg class="db-component__connectors" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+    <line x1="40" y1="50" x2="60" y2="50" />
+  </svg>
+<span class="db-component__arrowhead-horizontal db-component__arrowhead-horizontal--left" aria-hidden="true" style="--db-x:40%;--db-y:50%;"></span>
+<div class="db-component__node db-component__node--style-outline" style="--db-x:27%;--db-y:50%;"><span class="db-component__icon">U</span><span class="db-component__text">UI</span><span class="db-component__detail">reads state</span></div>
+<div class="db-component__node db-component__node--style-strong" style="--db-x:73%;--db-y:50%;"><span class="db-component__icon">R</span><span class="db-component__text">Runtime</span><span class="db-component__detail">owns state</span></div>
+</div></section>
+<section class="db-diagram"><h2 class="db-diagram__heading">Horizontal two-way arrow</h2><div class="db-component db-component--horizontal-two-way-arrow">
+  <svg class="db-component__connectors" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+    <line x1="40" y1="50" x2="60" y2="50" />
+  </svg>
+<span class="db-component__arrowhead-horizontal db-component__arrowhead-horizontal--right" aria-hidden="true" style="--db-x:60%;--db-y:50%;"></span>
+<span class="db-component__arrowhead-horizontal db-component__arrowhead-horizontal--left" aria-hidden="true" style="--db-x:40%;--db-y:50%;"></span>
+<div class="db-component__node db-component__node--size-lg" style="--db-x:27%;--db-y:50%;"><span class="db-component__icon">A</span><span class="db-component__text">Agent</span><span class="db-component__detail">decisions</span></div>
+<div class="db-component__node db-component__node--size-lg" style="--db-x:73%;--db-y:50%;"><span class="db-component__icon">T</span><span class="db-component__text">Tools</span><span class="db-component__detail">evidence</span></div>
+</div></section>
+<section class="db-diagram"><h2 class="db-diagram__heading">Square with text</h2><div class="db-component db-component--square-with-text">
+<div class="db-component__node db-component__node--square db-component__node--color-neutral db-component__node--style-dashed" style="--db-x:50%;--db-y:50%;"><span class="db-component__text">Ready</span><span class="db-component__detail">compact state</span></div>
+</div></section>
+<section class="db-diagram"><h2 class="db-diagram__heading">Square with icon detail</h2><div class="db-component db-component--square-with-icon-detail">
+<div class="db-component__node db-component__node--square db-component__node--size-lg db-component__node--color-blue db-component__node--style-strong" style="--db-x:50%;--db-y:50%;"><span class="db-component__icon">S</span><span class="db-component__text">Search</span><span class="db-component__detail">sources and logs</span></div>
+</div></section>
+    </div>
+  </main>
+</body>
+</html>

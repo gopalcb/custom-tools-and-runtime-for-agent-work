@@ -1,0 +1,199 @@
+root: my-system-libs
+repo_name: custom-agent-tools-and-runtime
+purpose: Direct-folder custom-agent tools and runtime library for easy Git organization.
+state_root: .agent-state
+validation:
+  root_smoke: python test.py
+  compile: python -m compileall my-system-libs
+  folder_tests:
+    - agent-custom-tools/playwright-ui-testing/test.py
+    - agent-custom-tools/event-messaging/test.py
+    - agent-custom-tools/strategy-feedback/test.py
+    - agent-custom-tools/diagram-builder/test.py
+    - agent-custom-tools/knowledge-search/test.py
+    - memory-server/test.py
+    - mq_server/test.py
+    - workflow/test.py
+metadata:
+  requirements: requirements.txt
+  project: project.toml
+  architecture: ARCHITECTURE.md
+modules:
+  runtime.py:
+    responsibility: Compact runtime facade for workflow, memory, MQ, messaging, and CLI commands.
+    key_symbols:
+      - CompactAgentRuntime
+      - context_summary
+      - main
+    notes:
+      - Loads sibling modules by path so folders can remain direct and compact.
+      - Uses temporary or caller-selected project roots for runtime state.
+  runtime_support.py:
+    responsibility: Runtime event and context dataclasses.
+    key_symbols:
+      - RuntimeEvent
+      - RunContext
+      - utc_now
+  workflow/engine.py:
+    responsibility: Combined workflow YAML loader, resolver, validator, and async runner.
+    key_symbols:
+      - WorkflowConfigurationError
+      - WorkflowCancelled
+      - WorkflowContext
+      - WorkflowResult
+      - WorkflowSelection
+      - resolve_workflow
+      - resolve_workflow_request
+      - resolve_planned_workflow
+      - WorkflowEngine
+      - run_workflow
+    yaml_sources:
+      - workflow/yamls/workflow-orchestrator.yaml
+      - workflow/yamls/workflow-steps.yaml
+  workflow/main.py:
+    responsibility: CLI facade for workflow resolution and dry-run execution.
+  workflow/test.py:
+    responsibility: Smoke tests for YAML expansion, dry-run execution, and custom handlers.
+  mq_server/server.py:
+    responsibility: FastAPI MQ server with background queue processing.
+    routes:
+      - POST /messages
+      - GET /messages/{event_id}
+      - GET /messages
+      - GET /health
+    key_symbols:
+      - MessageRequest
+      - build_event
+      - worker_loop
+      - post_message
+      - health
+  mq_server/handler.py:
+    responsibility: Deterministic MQ topic dispatcher.
+    topics:
+      - todo
+      - read-file
+      - write-file
+      - update-file
+      - delete-file
+      - run-workflow
+      - memory-store
+      - memory-search
+      - memory-health
+      - memory
+      - invoke-function
+      - system-error
+    key_symbols:
+      - process_event
+      - process_memory_request
+      - invoke_function
+      - save_todo
+      - save_system_error
+  mq_server/store.py:
+    responsibility: Minimal file-backed event and task store.
+    key_symbols:
+      - LocalStore
+  memory-server/server.py:
+    responsibility: Deterministic JSON memory storage and lexical retrieval.
+    key_symbols:
+      - memory_root
+      - health
+      - store_memory
+      - search_memory
+      - score_record
+  agent-custom-tools/playwright-ui-testing/chrome_browser.py:
+    responsibility: Persistent Playwright Chromium session and page lookup.
+    key_symbols:
+      - open_chrome
+      - get_page
+      - check_page_open
+      - read_session
+      - write_session
+  agent-custom-tools/playwright-ui-testing/operations.py:
+    responsibility: Browser inspection operations.
+    key_symbols:
+      - capture_page_screenshot
+      - trace_network_calls
+      - get_console_errors
+      - validate_dom_hydration
+  agent-custom-tools/playwright-ui-testing/main.py:
+    responsibility: JSON CLI for browser inspection commands.
+  agent-custom-tools/event-messaging/models.py:
+    responsibility: Durable message and lifecycle dataclasses.
+    key_symbols:
+      - AgentMessage
+      - MessageRecord
+  agent-custom-tools/event-messaging/bus.py:
+    responsibility: File-backed message bus, task records, events, and errors.
+    key_symbols:
+      - MessageBus
+      - safe_filename
+      - error_fingerprint
+  agent-custom-tools/event-messaging/hub.py:
+    responsibility: Polling hub with reply-message behavior.
+    key_symbols:
+      - AgentHub
+      - build_default_hub
+  agent-custom-tools/event-messaging/main.py:
+    responsibility: CLI for send, pending, process, fail, list, show, thread, summary, events, tasks, and errors.
+  agent-custom-tools/strategy-feedback/strategy_feedback_gui.py:
+    responsibility: Tkinter feedback form that writes a JSON response artifact.
+    key_symbols:
+      - run_form
+      - write_response
+      - main
+  agent-custom-tools/strategy-feedback/feedback_coordinator.py:
+    responsibility: Fixture or GUI feedback collection plus fallback analysis.
+    key_symbols:
+      - StrategyFeedbackCoordinator
+      - build_analysis_prompt
+      - parse_analysis
+      - fallback_analysis
+      - build_memory_source
+  agent-custom-tools/strategy-feedback/main.py:
+    responsibility: CLI for feedback collection and analysis.
+  agent-custom-tools/diagram-builder/diagram_builder.py:
+    responsibility: Declarative YAML-to-HTML renderer for architecture diagrams.
+    key_symbols:
+      - load_component_catalog
+      - validate_document
+      - render_document
+      - render_architecture_component
+      - render_horizontal_connector
+    component_catalog: agent-custom-tools/diagram-builder/libs/components.yaml
+    generated_sample: agent-custom-tools/diagram-builder/sample-new-components.html
+    new_components:
+      - square-with-text
+      - square-with-icon-detail
+      - horizontal-right-arrow
+      - horizontal-left-arrow
+      - horizontal-two-way-arrow
+      - animated-horizontal-right-arrow
+      - animated-horizontal-left-arrow
+      - animated-horizontal-two-way-arrow
+  agent-custom-tools/diagram-builder/assets/styles.css:
+    responsibility: Diagram visual system and component variant styles.
+  agent-custom-tools/diagram-builder/sample-new-components.yaml:
+    responsibility: Source YAML proving requested new components.
+  agent-custom-tools/knowledge-search/web_search.py:
+    responsibility: Structured Codex-backed web search with Markdown output.
+    key_symbols:
+      - SearchRequest
+      - SearchResponse
+      - validate_search_request
+      - validate_search_response
+      - search
+      - save_markdown
+  agent-custom-tools/knowledge-search/research.py:
+    responsibility: Multi-question research bundle generation.
+    key_symbols:
+      - run_research
+      - research_to_markdown
+      - save_research
+  agent-custom-tools/knowledge-search/log_search.py:
+    responsibility: Local log search, ERROR detection, and optional error recording.
+    key_symbols:
+      - search_logs
+      - detect_log_errors
+      - record_detected_errors
+  agent-custom-tools/knowledge-search/main.py:
+    responsibility: Dispatcher CLI for web, research, and log commands.

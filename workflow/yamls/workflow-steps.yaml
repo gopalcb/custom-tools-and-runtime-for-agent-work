@@ -1,0 +1,114 @@
+version: 1
+
+steps:
+  pre-work-health:
+    id: pre-work-health
+    name: Check control-plane health
+    uses: controller
+    action: health
+    timeout: 60
+
+  understand:
+    id: understand
+    name: Understand request and context
+    uses: agent
+    agent: system-engineer-agent
+    timeout: 600
+
+  optional-helpers:
+    id: optional-helpers
+    name: Run optional independent helpers
+    uses: conditional-parallel
+    depends_on:
+      - understand
+    timeout: 600
+    tasks:
+      - id: web-research
+        name: Research external sources
+        uses: message
+        topic: invoke-function
+        payload:
+          name: web-search
+        when: needs_web_search
+      - id: independent-analysis
+        name: Independent analysis
+        uses: agent
+        agent: analysis-agent
+        when: needs_independent_analysis
+      - id: independent-plan
+        name: Independent plan
+        uses: agent
+        agent: planner-agent
+        when: needs_independent_plan
+
+  implement:
+    id: implement
+    name: Implement changes
+    uses: agent
+    agent: system-engineer-agent
+    depends_on:
+      - optional-helpers
+    timeout: 1800
+
+  validation-workflow:
+    id: validation-workflow
+    name: Run validation workflow
+    uses: workflow
+    workflow: validation
+    depends_on:
+      - implement
+    timeout: 900
+
+  change-impact:
+    id: change-impact
+    name: Evaluate Git change impact
+    uses: controller
+    action: change-impact
+    depends_on:
+      - validation-workflow
+    timeout: 120
+
+  finalize:
+    id: finalize
+    name: Finalize work
+    uses: agent
+    agent: system-engineer-agent
+    depends_on:
+      - change-impact
+    timeout: 600
+
+  analyze:
+    id: analyze
+    name: Analyze evidence
+    uses: agent
+    agent: analysis-agent
+    timeout: 900
+
+  plan:
+    id: plan
+    name: Produce plan
+    uses: agent
+    agent: planner-agent
+    timeout: 900
+
+  deterministic-validation:
+    id: deterministic-validation
+    name: Run deterministic validation
+    uses: parallel
+    timeout: 900
+    tasks:
+      - id: python-compile
+        name: Compile Python sources
+        uses: shell
+        command: $validation.typecheck
+      - id: tests
+        name: Run tests
+        uses: shell
+        command: $validation.tests
+
+  remediation-todo:
+    id: remediation-todo
+    name: Persist remediation TODO
+    uses: message
+    topic: todo
+    timeout: 60

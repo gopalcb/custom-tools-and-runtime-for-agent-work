@@ -1,7 +1,0 @@
-<header class="topbar">
-  <div class="brand"><div class="brand-mark"><canvas #logoCanvas width="32" height="32" aria-label="3D cube logo"></canvas></div><div class="brand-copy"><p class="brand-title">monorepo-controller</p><p class="brand-subtitle">Agent runtime control surface</p></div></div>
-  <nav class="menu" aria-label="Header menu">
-    @for (item of menuItems; track item.route) { <button class="menu-item" [class.menu-item-selected]="selected(item.route)" type="button" (click)="navigate(item.route)"><span>{{ item.label }}</span></button> }
-  </nav>
-  <div class="header-actions"></div>
-</header>

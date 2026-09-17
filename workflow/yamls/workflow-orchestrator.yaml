@@ -1,0 +1,110 @@
+version: 1
+
+workflows:
+  workflow-selection:
+    phase: planning
+    steps:
+      - ref: pre-work-health
+      - ref: analyze
+      - ref: plan
+
+  new-feature:
+    phase: execution
+    steps:
+      - ref: pre-work-health
+      - ref: understand
+      - ref: optional-helpers
+      - ref: implement
+      - ref: validation-workflow
+      - ref: change-impact
+      - ref: finalize
+
+  analysis:
+    phase: execution
+    steps:
+      - ref: pre-work-health
+      - ref: analyze
+
+  plan-only:
+    phase: execution
+    steps:
+      - ref: pre-work-health
+      - ref: analyze
+      - ref: plan
+      - id: persist-plan
+        name: Persist plan
+        uses: message
+        topic: todo
+        depends_on:
+          - plan
+
+  validation:
+    phase: execution
+    steps:
+      - ref: deterministic-validation
+
+  error-remediation:
+    phase: execution
+    steps:
+      - ref: pre-work-health
+      - ref: remediation-todo
+      - ref: analyze
+      - id: remediation-plan
+        name: Plan remediation when needed
+        uses: agent
+        agent: planner-agent
+        when: needs_independent_plan
+        depends_on:
+          - analyze
+      - id: apply-remediation
+        name: Apply remediation
+        uses: agent
+        agent: system-engineer-agent
+        depends_on:
+          - remediation-plan
+        timeout: 1800
+      - id: remediation-validation
+        name: Validate remediation
+        uses: workflow
+        workflow: validation
+        depends_on:
+          - apply-remediation
+      - id: remediation-impact
+        name: Evaluate remediation change impact
+        uses: controller
+        action: change-impact
+        depends_on:
+          - remediation-validation
+      - id: remediation-finalize
+        name: Finalize remediation
+        uses: agent
+        agent: system-engineer-agent
+        depends_on:
+          - remediation-impact
+
+  default:
+    phase: execution
+    steps:
+      - ref: pre-work-health
+      - ref: understand
+      - ref: optional-helpers
+      - ref: implement
+      - ref: validation-workflow
+      - ref: change-impact
+      - ref: finalize
+
+  codex-smoke:
+    phase: execution
+    steps:
+      - ref: pre-work-health
+      - ref: understand
+      - ref: validation-workflow
+      - ref: change-impact
+      - ref: finalize
+
+  implementation-planning:
+    phase: execution
+    steps:
+      - ref: pre-work-health
+      - ref: analyze
+      - ref: plan

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agent Messaging as the System's Nervous System</title>
+  <script src="runtime-config.js"></script>
+  <script src="page-view-logging.js" defer></script>
+  <style>
+    :root {
+      color-scheme: light;
+      --text: #20231f;
+      --muted: #62665f;
+      --border: #d8d3c9;
+      --soft: #f8f6f1;
+      --accent: #48675e;
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    body {
+      margin: 0;
+      color: var(--text);
+      background: #fffdf8;
+    }
+    main {
+      width: min(920px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 48px 0 72px;
+    }
+    h1 {
+      max-width: 780px;
+      margin: 0 0 14px;
+      font-size: 34px;
+      line-height: 1.08;
+      letter-spacing: 0;
+    }
+    h2 {
+      margin: 36px 0 10px;
+      font-size: 19px;
+      line-height: 1.25;
+    }
+    p, li {
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.65;
+    }
+    a {
+      color: var(--accent);
+      font-weight: 700;
+    }
+    code, pre {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.95em;
+    }
+    pre {
+      overflow: auto;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--soft);
+    }
+    .lede {
+      max-width: 740px;
+      color: var(--text);
+      font-size: 18px;
+      line-height: 1.55;
+    }
+    .diagram-frame {
+      width: 100%;
+      height: 1180px;
+      margin: 28px 0 6px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--soft);
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Agent Messaging as the System's Nervous System</h1>
+    <p class="lede">Agent messaging is not just chat between agents. In this system, a message is a small work envelope that routes tool calls, records state, and leaves an inspectable trail.</p>
+
+    <p>The compact message queue has a simple job: accept an envelope, persist it, queue it, dispatch it by topic, attach the result, and persist the final state. Tools are called by routing messages.</p>
+
+    <p><a href="intuitive-agent-messaging-flow-diagrams.html">Open the generated diagram page</a> or inspect the <a href="intuitive-agent-messaging-flow-diagrams.yaml">source YAML</a>.</p>
+    <iframe class="diagram-frame" src="intuitive-agent-messaging-flow-diagrams.html" title="Intuitive agent messaging flow diagrams"></iframe>
+
+    <h2>A Message Is a Work Envelope</h2>
+    <p>The compact MQ server accepts <code>topic</code>, <code>sender</code>, <code>payload</code>, and an optional <code>event_id</code>. The topic is the route. The payload is the argument bag. The sender is the trace. The event id makes the work easy to find again.</p>
+    <p>The server adds status, timestamp, and result fields. Then it saves the event before processing begins, so the request remains visible even if the worker fails later.</p>
+
+    <h2>The Flow Is Small on Purpose</h2>
+    <p>A caller posts a message. The server stores it as pending. A worker marks it processing. The handler reads the topic and runs the matching deterministic operation. The result is attached, and the final processed state is written back to disk.</p>
+    <p>There is no hidden orchestration trick in the middle. The handler is a topic switchboard for routes like <code>read-file</code>, <code>write-file</code>, <code>run-workflow</code>, <code>memory-store</code>, <code>todo</code>, and <code>invoke-function</code>.</p>
+
+    <h2>How Tool Calls Ride on Messaging</h2>
+    <p>A tool call is just a message whose topic points at a tool-shaped handler.</p>
+<pre><code>uses: message
+topic: invoke-function
+payload:
+  name: web-search</code></pre>
+    <p>The workflow runner can treat this as a message step. The MQ handler receives <code>topic: invoke-function</code>, reads <code>payload.name</code>, and dispatches the allow-listed helper. The same shape works for memory, workflow resolution, file operations, and task creation.</p>
+
+    <h2>Why This Feels Different From Direct Calls</h2>
+    <p>A direct function call disappears when the process exits unless someone records it. A message creates evidence as part of the call: who asked, which topic handled it, what arguments were supplied, which status it reached, and what result came back.</p>
+
+    <h2>Two Kinds of Messaging</h2>
+    <p>The compact MQ server is for topic-dispatched runtime work. It stores event snapshots under <code>.agent-state/messages/</code> and is best for deterministic actions.</p>
+    <p>The file-backed agent message bus under <code>agent-custom-tools/event-messaging/</code> is for agent-to-agent inbox behavior. It keeps inbox, processed, failed, records, tasks, threads, and errors visible on disk.</p>
+
+    <h2>The Handler Is the Boundary</h2>
+    <p>An agent can ask for work before it reaches this layer, but the handler only accepts known topics. Unknown topics fail. File paths stay inside the project root. Memory actions are reduced to store, search, and health. Helper functions are allow-listed.</p>
+
+    <h2>The Mental Model</h2>
+    <p>Think of the message queue as a small desk in the middle of the runtime. Agents, workflows, and operator surfaces put labeled envelopes on the desk. The worker opens one envelope at a time. The topic tells it which tool shelf to use. The result goes back into the envelope, and the envelope is filed where the operator and future tools can inspect it.</p>
+  </main>
+</body>
+</html>

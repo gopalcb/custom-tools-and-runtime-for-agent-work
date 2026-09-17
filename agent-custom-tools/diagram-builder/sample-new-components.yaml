@@ -1,0 +1,61 @@
+title: Compact Diagram Builder New Components
+subtitle: Horizontal, bidirectional, square, icon, detail, size, color, and style variants.
+diagrams:
+  - type: component
+    title: Horizontal right arrow
+    component: horizontal-right-arrow
+    nodes:
+      - text: Intake
+        icon: I
+        detail: prompt
+        color: green
+      - text: Planner
+        icon: P
+        detail: next action
+        color: blue
+
+  - type: component
+    title: Horizontal left arrow
+    component: horizontal-left-arrow
+    nodes:
+      - text: UI
+        icon: U
+        detail: reads state
+        style: outline
+      - text: Runtime
+        icon: R
+        detail: owns state
+        style: strong
+
+  - type: component
+    title: Horizontal two-way arrow
+    component: horizontal-two-way-arrow
+    nodes:
+      - text: Agent
+        icon: A
+        detail: decisions
+        size: lg
+      - text: Tools
+        icon: T
+        detail: evidence
+        size: lg
+
+  - type: component
+    title: Square with text
+    component: square-with-text
+    nodes:
+      - text: Ready
+        detail: compact state
+        color: neutral
+        style: dashed
+
+  - type: component
+    title: Square with icon detail
+    component: square-with-icon-detail
+    nodes:
+      - text: Search
+        icon: S
+        detail: sources and logs
+        size: lg
+        color: blue
+        style: strong

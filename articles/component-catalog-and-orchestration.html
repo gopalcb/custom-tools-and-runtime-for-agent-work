@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Component Catalog and Orchestration Details</title>
+  <script src="runtime-config.js"></script>
+  <script src="page-view-logging.js" defer></script>
+  <style>
+    :root {
+      color-scheme: light;
+      --text: #20231f;
+      --muted: #62665f;
+      --border: #d8d3c9;
+      --soft: #f8f6f1;
+      --accent: #48675e;
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    body {
+      margin: 0;
+      color: var(--text);
+      background: #fffdf8;
+    }
+    main {
+      width: min(920px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 48px 0 72px;
+    }
+    h1 {
+      max-width: 760px;
+      margin: 0 0 14px;
+      font-size: 34px;
+      line-height: 1.08;
+      letter-spacing: 0;
+    }
+    h2 {
+      margin: 36px 0 10px;
+      font-size: 19px;
+      line-height: 1.25;
+    }
+    h3 {
+      margin: 24px 0 6px;
+      font-size: 15px;
+    }
+    p, li {
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.65;
+    }
+    a {
+      color: var(--accent);
+      font-weight: 700;
+    }
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.95em;
+    }
+    .lede {
+      max-width: 720px;
+      color: var(--text);
+      font-size: 18px;
+      line-height: 1.55;
+    }
+    .diagram-frame {
+      width: 100%;
+      height: 1120px;
+      margin: 28px 0 6px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--soft);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 10px 24px;
+      padding-left: 18px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Component Catalog and Orchestration Details</h1>
+    <p class="lede">This page documents the available diagram-builder components and how they fit together. The builder turns clear YAML into clean HTML diagrams.</p>
+
+    <p><a href="component-catalog-and-orchestration-diagrams.html">Open the generated diagram page</a> or inspect the <a href="component-catalog-and-orchestration-diagrams.yaml">source YAML</a>.</p>
+    <iframe class="diagram-frame" src="component-catalog-and-orchestration-diagrams.html" title="Component catalog and orchestration diagrams"></iframe>
+
+    <h2>Main Diagram Types</h2>
+    <ul>
+      <li><code>flow</code>: steps from top to bottom.</li>
+      <li><code>tree</code>: file, ownership, or nested structure.</li>
+      <li><code>event_bus</code>: sources feeding a hub and producing outputs.</li>
+      <li><code>component</code>: one reusable unit.</li>
+      <li><code>component_stack</code>: a larger picture made from reusable units.</li>
+      <li><code>component_gallery</code>: a generated guide to available architecture components.</li>
+    </ul>
+
+    <h2>Core Components</h2>
+    <div class="grid">
+      <ul>
+        <li><code>label-upper</code></li>
+        <li><code>label-normal</code></li>
+        <li><code>label-lower</code></li>
+        <li><code>down-arrow</code></li>
+        <li><code>down-arrow-with-right-branches</code></li>
+      </ul>
+      <ul>
+        <li><code>tree-root</code></li>
+        <li><code>tree-folder</code></li>
+        <li><code>tree-file</code></li>
+        <li><code>bus-source</code></li>
+        <li><code>bus-hub</code></li>
+      </ul>
+      <ul>
+        <li><code>bus-output</code></li>
+        <li><code>bus-artifact</code></li>
+        <li><code>node-only</code></li>
+        <li><code>tri-node-component</code></li>
+        <li><code>double-node-component</code></li>
+      </ul>
+    </div>
+
+    <h2>Architecture Components</h2>
+    <p>Use vertical architecture components when the idea moves from top to bottom. Use <code>node-only</code> above and below compound components when those components already own their connector lines.</p>
+    <ul>
+      <li><code>node-with-up-down-arrow</code></li>
+      <li><code>node-with-down-arrow</code></li>
+      <li><code>node-with-top-arrow</code></li>
+      <li><code>tri-node-without-bottom-line</code></li>
+      <li><code>double-node-without-bottom-line</code></li>
+    </ul>
+
+    <h2>Horizontal and Square Components</h2>
+    <p>Use these when the thought is peer-to-peer or state-based instead of a vertical pipeline.</p>
+    <ul>
+      <li><code>horizontal-right-arrow</code></li>
+      <li><code>horizontal-left-arrow</code></li>
+      <li><code>horizontal-two-way-arrow</code></li>
+      <li><code>animated-horizontal-right-arrow</code></li>
+      <li><code>animated-horizontal-left-arrow</code></li>
+      <li><code>animated-horizontal-two-way-arrow</code></li>
+      <li><code>square-with-text</code></li>
+      <li><code>square-with-icon-detail</code></li>
+    </ul>
+
+    <h2>Orchestration</h2>
+    <p>The orchestration is intentionally small: YAML declares the diagram, validation checks it, rendering creates HTML, and CSS provides stable geometry, colors, connectors, and animation.</p>
+    <p><code>YAML -> validation -> HTML -> CSS-rendered diagram</code></p>
+
+    <h2>Composition Rule</h2>
+    <p>Choose the shape that matches the thought. Use flow for sequence, tree for nesting, event bus for runtime movement, component stacks for composed systems, horizontal arrows for peer relationships, and square nodes for states or small concepts.</p>
+  </main>
+</body>
+</html>

@@ -1,238 +1,439 @@
-# Codex Agent Monorepo
+# Custom Agent Tools and Runtime
 
-This repository is a compact local control plane for specialized coding
-agents. The native Codex CLI remains the default terminal experience; the
-shared Python runtime is available for App Server-backed workflows, durable
-events, finalization artifacts, local work memory, and gateway consumers.
+<img src="https://8gpuf4o0pa.execute-api.ca-central-1.amazonaws.com/agent/logging/visit?site=custom-agent-tools-and-runtime&route=README.md&page_title=Custom%20Agent%20Tools%20and%20Runtime&visit_source=github-readme&entry_path=README.md&page_link=https%3A%2F%2Fgithub.com%2Fgopalcb%2Fcustom-tools-and-runtime-for-agent-work%23readme" width="1" height="1" alt="" />
 
-The design keeps each source of truth easy to find:
+A compact, inspectable Python toolbox for building local agent systems.
 
-- agent identity and capabilities live in `agent-config/agents/*/agent.yaml`;
-- agent behavior lives beside it in `instructions.md`;
-- orchestration lives with the shared runtime in
-  `agent-runtime/agent-monorepo/workflows/`, composed from its reusable step
-  catalog;
-- global paths and runtime policy live in `project-registry.yaml`;
-- Python owns execution, events, storage, memory, and the gateway-facing runtime.
+This project brings the essential parts of an agent control plane into one
+direct-folder repository: workflow resolution and execution, deterministic
+message dispatch, durable agent-to-agent messaging, local memory, browser
+inspection, diagram generation, knowledge search, and post-work feedback.
 
-## How a request runs
+The emphasis is not on hiding everything behind a framework. It is on making
+each boundary visible. A reader can follow a request from its entry point,
+through a workflow or message handler, into durable state, and back to a result
+without needing a separate service map.
 
-```text
-prompt
-  │
-  ▼
-Gateway consumer ──► AgentGateway ──► deterministic Resolver
-                                         │
-                                         ▼
-                         planning workflow → YAML WorkflowEngine
-                                         │
-                         ┌───────────────┼────────────────┐
-                         ▼               ▼                ▼
-                   project context  Codex App Server  validation
-                         │               │                │
-                         └───────────────┼────────────────┘
-                                         ▼
-                                  RuntimeEvent stream
-                                           │
-                                           ▼
-                                      events.jsonl
-                                           │
-                                           ▼
-                               post-completion artifacts
+![Custom Agent Tools and Runtime architecture](docs/project-architecture-diagram.png)
+
+The diagram is generated from
+[`docs/project-architecture-diagram.yaml`](docs/project-architecture-diagram.yaml)
+by the included diagram builder. The portable HTML rendering is available at
+[`docs/project-architecture-diagram.html`](docs/project-architecture-diagram.html).
+
+## What This Project Gives You
+
+- A small `CompactAgentRuntime` facade that joins workflows, memory, MQ-style
+  dispatch, and durable agent messages.
+- A YAML workflow engine with dependency validation, conditions, retries,
+  timeouts, cancellation, and bounded parallel groups.
+- A FastAPI message queue whose topics map to explicit, deterministic handlers.
+- A second messaging layer for named agents, inboxes, replies, lifecycle
+  records, tasks, and operational errors.
+- A file-backed memory store with deterministic lexical retrieval.
+- Standalone tools for browser inspection, architecture diagrams, knowledge
+  search, and post-work strategy feedback.
+- Plain JSON and JSONL state under `.agent-state/`, so runs remain inspectable
+  with ordinary filesystem tools.
+- Local smoke tests that avoid live Codex sessions, browsers, or servers unless
+  those capabilities are explicitly invoked.
+
+This is a starter runtime and tool library, not a hosted orchestration platform.
+It deliberately avoids provider hierarchies, vector databases, schedulers, and
+frontend/backend bridge layers until a real use case requires them.
+
+## The 60-Second Mental Model
+
+There are four layers:
+
+1. **Callers** use `runtime.py`, the workflow CLI, the MQ API, or a custom tool.
+2. **Orchestration** resolves YAML workflows and turns requests into ordered or
+   parallel steps.
+3. **Messaging and services** route bounded work to file operations, memory,
+   workflow lookup, task storage, or named agents.
+4. **Durable state** records what happened under `.agent-state/` as readable
+   JSON files.
+
+`runtime.py` is the simplest entry point. It loads the direct-folder modules and
+offers one Python API for the most common operations:
+
+```python
+from runtime import CompactAgentRuntime
+
+runtime = CompactAgentRuntime(".")
+
+workflow = runtime.resolve_workflow("analysis")
+health = runtime.process_message("invoke-function", {"name": "health"})
+message_path = runtime.send_agent_message(
+    sender="planner",
+    recipient="implementer",
+    message_type="task.request",
+    payload={"task": "Add a health check"},
+)
 ```
 
-The resolver uses explicit, deterministic rules first. Every catalog-enabled run starts with analysis and project context; optional web research is limited to that planning phase. The planner can choose only a declared execution workflow, and the workflow engine handles ordered and conditional steps, retries, timeouts, dependencies, bounded parallel validation, and cancellation.
+## How One Request Moves Through the System
 
-Codex notifications are normalized at the runtime boundary. Gateway consumers and persisted logs therefore use stable `RuntimeEvent` fields instead of raw App Server protocol objects. Events are appended and flushed as work happens, so an interrupted process still leaves useful history.
+Consider an operator asking the runtime to execute the `analysis` workflow.
 
-## Project architecture
+1. `CompactAgentRuntime` creates a `RunContext` with a run id, session id,
+   workflow id, prompt, and in-memory runtime events.
+2. `workflow/engine.py` reads the two workflow YAML files, expands reusable
+   step references, validates dependencies, and selects the requested workflow.
+3. The workflow runner executes steps in dependency order. When no real handler
+   is supplied, unsupported external work is represented as a deterministic
+   dry run rather than secretly launching another system.
+4. Runtime events describe start and completion state to the caller.
+5. If a step sends MQ work, the event is persisted, marked as processing,
+   dispatched by topic, given a result, and persisted again as processed or
+   failed.
+6. Memory, task, message, and error outputs are written beneath the selected
+   project root in `.agent-state/`.
+
+That flow is intentionally transparent: YAML explains the plan, Python owns the
+execution rules, and files show the resulting state.
+
+## Architecture at a Glance
+
+| Area | Entry point | Responsibility |
+| --- | --- | --- |
+| Runtime facade | `runtime.py` | One API for workflow, memory, MQ dispatch, agent messaging, and CLI commands. |
+| Runtime contracts | `runtime_support.py` | `RunContext`, `RuntimeEvent`, UTC timestamps, and JSON-compatible summaries. |
+| Workflow engine | `workflow/engine.py` | YAML loading, ref expansion, dependency checks, conditions, retry/timeout behavior, cancellation, and parallel groups. |
+| MQ API | `mq_server/server.py` | FastAPI routes and a background queue worker. |
+| MQ dispatcher | `mq_server/handler.py` | Allow-listed topic-to-function routing for deterministic work. |
+| MQ storage | `mq_server/store.py` | Event snapshots and task records under `.agent-state/`. |
+| Agent messaging | `agent-custom-tools/event-messaging/` | Named inboxes, replies, lifecycle archives, tasks, and errors. |
+| Memory | `memory-server/server.py` | JSON record storage, basic secret rejection, and lexical search. |
+| Custom tools | `agent-custom-tools/` | Diagram, browser, research, messaging, and feedback utilities. |
+
+## Messaging: Two Surfaces, Two Jobs
+
+The project contains two messaging surfaces because deterministic runtime work
+and asynchronous agent coordination have different needs.
+
+### 1. MQ topics: request work from the runtime
+
+`mq_server/` is the runtime work desk. A caller submits an event with a `topic`,
+`sender`, and `payload`. The worker persists the event, routes it to an
+allow-listed handler, attaches the result, and stores the final state.
+
+```json
+{
+  "event_id": "evt-health-check",
+  "topic": "invoke-function",
+  "status": "pending",
+  "sender": "operator",
+  "payload": {
+    "name": "health"
+  },
+  "timestamp": "2026-09-16T12:00:00Z",
+  "result": null
+}
+```
+
+After handling, the same envelope carries the outcome:
+
+```json
+{
+  "event_id": "evt-health-check",
+  "topic": "invoke-function",
+  "status": "processed",
+  "sender": "operator",
+  "payload": {
+    "name": "health"
+  },
+  "timestamp": "2026-09-16T12:00:00Z",
+  "result": {
+    "ok": true,
+    "project_root": "/path/to/project"
+  }
+}
+```
+
+Supported topics are deliberately explicit:
+
+| Topic | What it does |
+| --- | --- |
+| `todo` | Writes a task record. |
+| `read-file` | Reads a UTF-8 file inside the selected project root. |
+| `write-file` | Writes text inside the selected project root. |
+| `update-file` | Writes formatted JSON inside the selected project root. |
+| `delete-file` | Deletes one file inside the selected project root. |
+| `run-workflow` | Resolves a named workflow and returns its expanded steps. |
+| `memory-store` / `memory-search` / `memory-health` | Calls the corresponding memory operation. |
+| `memory` | Routes `store`, `remember`, `search`, `retrieve`, `query`, or `health` actions. |
+| `invoke-function` | Calls a small allow-list of helper functions such as `health`. |
+| `system-error` | Converts an operational error into an actionable task record. |
+
+File operations pass through `safe_project_path()`. A path that escapes the
+configured project root is rejected before it can be read, written, or deleted.
+
+The HTTP surface is equally small:
+
+| Method | Route | Purpose |
+| --- | --- | --- |
+| `POST` | `/messages` | Submit an event for processing. |
+| `GET` | `/messages/{event_id}` | Read one event snapshot. |
+| `GET` | `/messages` | List known events. |
+| `GET` | `/health` | Check server health. |
+
+### 2. Agent messages: coordinate named workers
+
+`agent-custom-tools/event-messaging/` is the durable coordination surface. An
+`AgentMessage` contains:
+
+- `id` and `created_at` for identity and ordering;
+- `sender` and `recipient` for routing;
+- `type` for selecting a registered handler;
+- `payload` for task-specific data;
+- optional `reply_to` for a visible request/reply thread.
+
+Sending a message writes it to the recipient's inbox and creates a durable
+record. `AgentHub` polls inboxes, finds a handler registered for the exact
+`(recipient, message type)` pair, and then:
+
+- moves successful work to `processed/` and sends a `.result` reply;
+- moves unhandled or failed work to `failed/` with an error sidecar;
+- updates the indexed message record and append-only event log;
+- preserves `reply_to`, allowing the complete thread to be reconstructed.
+
+The same bus can store task status histories and track the current operational
+error. Repeated errors receive a stable fingerprint and occurrence count; fixed
+or superseded errors are archived.
+
+Example:
+
+```bash
+python agent-custom-tools/event-messaging/main.py \
+  --root /tmp/agent-messages \
+  send \
+  --sender planner \
+  --recipient agent-health \
+  --type health.request
+
+python agent-custom-tools/event-messaging/main.py \
+  --root /tmp/agent-messages \
+  hub run-once
+```
+
+The resulting state is ordinary files:
+
+```text
+.agent-state/
+├── agents-messaging/
+│   ├── inbox/<agent-id>/
+│   ├── processed/<agent-id>/
+│   ├── failed/<agent-id>/
+│   ├── records/
+│   │   ├── events.jsonl
+│   │   ├── messages/
+│   │   └── tasks/
+│   ├── errors/
+│   ├── current-error.json
+│   └── manifest.json
+├── cache/memory/records/
+├── messages/events-<topic>/
+├── task/<project>/
+├── strategy-feedback/
+└── playwright-ui-testing/
+```
+
+## Workflows
+
+Workflow definitions live in:
+
+- `workflow/yamls/workflow-orchestrator.yaml` — named workflows and their
+  ordered step references;
+- `workflow/yamls/workflow-steps.yaml` — reusable step definitions.
+
+The supplied workflows cover selection/planning, normal feature work,
+analysis, plan-only work, validation, error remediation, and a small Codex
+smoke path. Supported step primitives include `agent`, `shell`, `tool`,
+`message`, `workflow`, `controller`, `hook`, `parallel`, and
+`conditional-parallel`.
+
+Resolve or dry-run a workflow from the root:
+
+```bash
+python runtime.py resolve-workflow --workflow analysis
+python runtime.py run --workflow analysis --prompt "Inspect the message flow"
+```
+
+Or use the workflow-specific CLI:
+
+```bash
+python workflow/main.py resolve --workflow analysis
+python workflow/main.py run --workflow analysis --prompt "Inspect the runtime"
+```
+
+Real integrations can pass handlers to `WorkflowEngine.execute()`. This keeps
+the workflow model reusable while leaving external side effects under the
+caller's control.
+
+## Custom Tool Catalog
+
+### Diagram builder
+
+`agent-custom-tools/diagram-builder/` converts declarative YAML into portable,
+static HTML. It includes flow, tree, event-bus, component-stack, fan-in/fan-out,
+square-node, and horizontal-arrow components. The renderer performs strict
+component and node-count validation before writing output.
+
+```bash
+python agent-custom-tools/diagram-builder/diagram_builder.py \
+  docs/project-architecture-diagram.yaml \
+  docs/project-architecture-diagram.html \
+  --components agent-custom-tools/diagram-builder/libs/components.yaml \
+  --css-href ../agent-custom-tools/diagram-builder/assets/styles.css
+```
+
+### Playwright UI testing
+
+`agent-custom-tools/playwright-ui-testing/` provides persistent Chromium
+session management, screenshot capture, short network traces, browser console
+errors, and basic DOM hydration checks. Playwright imports lazily, so the rest
+of the library can be tested without installed browser binaries.
+
+### Knowledge search
+
+`agent-custom-tools/knowledge-search/` separates structured web search,
+multi-question research bundles, and local log/error search. Each capability
+has a small module and is exposed through a dispatcher CLI.
+
+### Strategy feedback
+
+`agent-custom-tools/strategy-feedback/` collects post-work feedback from a JSON
+fixture or a Tkinter form, parses analyzer output, falls back to deterministic
+local analysis when needed, and emits memory-source metadata.
+
+## Repository Map
 
 ```text
 .
-├── project-registry.yaml                 # Global paths, limits, Codex policy, feature flags
-├── pyproject.toml                        # Python package wiring and CLI commands
-├── AGENTS.md                             # Repository guidance for coding agents
-│
-├── agent-config/                         # Declarative agent configuration
-│   ├── context/
-│   │   └── monorepo-architecture.md      # Compact agent-facing architecture map
-│   ├── skills/                           # Reusable instruction files selected by the resolver
-│   └── agents/                           # Declarative agent definitions
-│       ├── agent-monorepo/
-│       │   ├── agent.yaml                # Default project specialist
-│       │   └── instructions.md
-│       ├── agent-builder/
-│       │   ├── agent.yaml                # Routing, workflow, skills, tools, model profile
-│       │   └── instructions.md           # How to create and validate new agents
-│       ├── agent-ui-builder/
-│       │   ├── agent.yaml
-│       │   └── instructions.md           # Lightweight HTML/CSS/JS mockup behavior
-│       ├── agent-ui-debugger/
-│       │   ├── agent.yaml
-│       │   └── instructions.md
-│       ├── agent-implementation-planner/
-│       │   ├── agent.yaml
-│       │   ├── instructions.md           # Read-only implementation planning contract
-│       │   ├── planner.py                # Standalone structured planner CLI
-│       │   ├── validation.py
-│       │   └── plan.schema.json
-│       ├── agent-logs-analyzer/
-│       │   ├── agent.yaml
-│       │   └── instructions.md
-│       └── codex-agent/
-│           ├── agent.yaml                # Generic fallback selected by /codex-agent
-│           └── instructions.md
-│
-├── agent-gateway/
-│   └── gateway.py                        # Thin public run/resume/cancel/approval facade
-│
-├── agent-runtime/
-│   ├── agent-monorepo/
-│   │   ├── bootstrap.py                  # Builds the application object graph
-│   │   ├── registry.py                   # Loads and validates config, agents, skills, workflows
-│   │   ├── resolver.py                   # Produces one deterministic executable run spec
-│   │   ├── runtime.py                    # Owns runs, Codex turns, tools, sessions, cancellation
-│   │   ├── codex_client.py               # Async Codex App Server JSONL/JSON-RPC adapter
-│   │   ├── workflow.py                   # Compatibility facade for workflow imports
-│   │   ├── workflows/                    # Models, resolver, runner, and workflow YAML
-│   │   │   ├── workflow-orchestrator.yaml # Planning and execution composition
-│   │   │   └── workflow-steps.yaml        # Reusable declarative step catalog
-│   │   ├── events.py                     # Immutable events, subscribers, append-only storage
-│   │   ├── post_completion.py            # Derives summaries, metrics, artifacts, memory candidates
-│   │   └── memory/
-│   │       ├── service.py                # Memory policy and deterministic candidate output
-│   │       ├── retrieval.py              # Safe lexical retrieval with metadata/recency weighting
-│   │       ├── ingestion/.gitkeep        # Reserved ingestion boundary
-│   │       ├── embeddings/README.md      # Future embedding protocol, no premature provider code
-│   │       └── stores/README.md          # Future store protocol, no premature adapter code
-│   └── monorepo-controller/              # Angular/Nest browser control surface
-├── agent-tools/
-│   ├── web-search/                         # Codex SDK-backed external research
-│   └── internal-messaging/                 # Durable agent-to-agent message bus
-│
-├── .agent-state/                         # Local derived state; contents are ignored by Git
-│   ├── cache/
-│   ├── logs/<session>/<run>/             # events.jsonl and derived run artifacts
-│   └── sessions/<session>/session.json   # Resume metadata and Codex thread ID
-│
-├── docs/                                 # Design notes, memory plans, improvement backlog
-└── tests/                                # Resolver, workflow, events, protocol, integration
+├── README.md
+├── ARCHITECTURE.md
+├── code-map.yaml
+├── project.toml
+├── requirements.txt
+├── runtime.py
+├── runtime_support.py
+├── workflow/
+│   ├── engine.py
+│   ├── main.py
+│   └── yamls/
+├── mq_server/
+│   ├── server.py
+│   ├── handler.py
+│   └── store.py
+├── memory-server/
+│   └── server.py
+├── agent-custom-tools/
+│   ├── diagram-builder/
+│   ├── event-messaging/
+│   ├── knowledge-search/
+│   ├── playwright-ui-testing/
+│   └── strategy-feedback/
+├── articles/
+│   ├── component-catalog-and-orchestration.*
+│   ├── intuitive-agent-messaging-flow.*
+│   └── memory-shaped-clean-diagram-building.*
+└── docs/
+    ├── project-architecture-diagram.yaml
+    ├── project-architecture-diagram.html
+    └── project-architecture-diagram.png
 ```
 
-The gateway stays small so another interface can wrap the same runtime later. Interfaces send user actions through the gateway; they do not route agents, interpret workflows, poll log files, or calculate final metrics.
+`ARCHITECTURE.md` explains module boundaries in more detail, while
+`code-map.yaml` maps concrete files to their responsibilities and key symbols.
 
-All agents receive the shared `agent_messaging` capability. Use `agent-msg` to
-send and inspect messages; records are stored in `.agent-state/agents-messaging`.
+## Setup
 
-## Requirements and setup
-
-Use Python 3.10 or newer and a Codex CLI compatible with the configured App
-Server range. The current registry accepts `>=0.153.4,<0.155.0`.
+Python 3.11 or newer is required.
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install -e ".[test]"
-codex --version
+python -m pip install -r requirements.txt
 ```
 
-The browser controller is maintained under `agent-runtime/monorepo-controller`.
-Run its Nest backend and Angular frontend as described in that project's README:
+Start the MQ API from the repository root:
 
 ```bash
-cd agent-runtime/monorepo-controller
+uvicorn mq_server.server:app --host 127.0.0.1 --port 8010
 ```
 
-Codex commands are kept out of workflow execution. `/models` queries the App
-Server model list; `/status`, `/help`, `/interrupt`, and `/compact` are also
-forwarded immediately through the structured command bridge.
-
-The implementation planner can also be run directly without changing the
-repository:
+The browser tool additionally needs a Playwright browser installation when live
+browser operations are used:
 
 ```bash
-python agent-config/agents/agent-implementation-planner/planner.py \
-  "Plan the requested repository change" --repo . --dry-run
+playwright install chromium
 ```
 
-## Local change and approval policy
+## Validation
 
-The default `project-registry.yaml` configuration uses:
-
-```yaml
-codex:
-  approval_policy: never
-  sandbox: workspace-write
-  writable_roots:
-    - .
-```
-
-This lets Codex make ordinary changes inside this repository without stopping for permission. Writable roots are validated to remain inside the configured project root.
-
-To require decisions, change `approval_policy` to an App Server opt-in policy such as `on-request`. Gateway consumers can surface pending requests and call `respond_to_approval(request_id, decision)`.
-
-## Runtime output
-
-Each run writes continuously to:
-
-```text
-.agent-state/logs/<session-id>/<run-id>/
-├── events.jsonl
-├── run.json
-├── summary.md
-├── metrics.json
-├── artifacts.json
-└── memory_candidates.json
-```
-
-`events.jsonl` is the append-only factual record. Finalization derives every other file from those events. `artifacts.json` indexes `artifact.created` events, while session metadata retains the Codex thread ID needed by `--resume`.
-
-Memory is progressive. Deterministic extraction and local lexical retrieval are
-enabled in `project-registry.yaml`; semantic retrieval remains disabled until a
-real need justifies embeddings, stores, and ingestion implementations. A
-completed run never triggers an extra model call merely to create memory.
-
-## Adding an agent or workflow
-
-Create an agent with two files:
-
-```text
-agent-config/agents/<agent-id>/
-├── agent.yaml
-└── instructions.md
-```
-
-Declare its workflow, skills, permitted tools, and optional model profile in `agent.yaml`. The registry discovers it automatically and rejects missing fields, unknown references, duplicate IDs, and paths that escape configured roots.
-
-Add reusable step definitions to
-`agent-runtime/agent-monorepo/workflows/workflow-steps.yaml`, then compose
-them by `ref` in the adjacent `workflow-orchestrator.yaml`. The supported
-primitives are `agent`, `tool`, `shell`, `hook`, and `parallel`, with named
-`when`, `retry`, `timeout`, and `depends_on` controls. Keep web research in the
-planning workflow so execution remains bounded to the approved plan.
-
-## Verification
-
-Run the complete offline suite and import checks with:
+Run the root integration smoke test:
 
 ```bash
-.venv/bin/python -m compileall agent-runtime/agent-monorepo agent-gateway agent-tools/internal-messaging agent-tools/ui-debugger agent-config/agents/agent-implementation-planner agent-config/agents/agent-logs-analyzer
-.venv/bin/python -m pytest -q
+python test.py
 ```
 
-The tests inject fake Codex transports, so normal verification does not need network access or a model turn. They cover routing, workflow dependencies and concurrency, event durability, finalization, protocol normalization, approvals, resume, failure, and cancellation. A bounded live smoke check can validate the App Server initialize handshake without starting a model turn.
+Run every focused smoke test:
 
-## Source-of-truth order
-
-When sources disagree, follow this order:
-
-```text
-user instruction
-  → current repository code, configuration, and tests
-  → agent.yaml and workflow YAML
-  → maintained architecture or ADR
-  → durable project memory
-  → runtime session history
+```bash
+python workflow/test.py
+python mq_server/test.py
+python memory-server/test.py
+python agent-custom-tools/event-messaging/test.py
+python agent-custom-tools/diagram-builder/test.py
+python agent-custom-tools/knowledge-search/test.py
+python agent-custom-tools/playwright-ui-testing/test.py
+python agent-custom-tools/strategy-feedback/test.py
 ```
 
-Runtime logs are evidence of what happened. They are never application configuration.
+Compile all Python sources:
+
+```bash
+python -m compileall runtime.py runtime_support.py workflow mq_server \
+  memory-server agent-custom-tools
+```
+
+The tests use temporary directories and local fakes where practical. They do
+not require a live Codex session, a running FastAPI server, or a browser merely
+to validate the core contracts.
+
+## Operating Boundaries
+
+- Runtime state belongs in `.agent-state/` and is ignored by Git.
+- File topics may operate only inside the selected project root.
+- MQ topics and agent handlers are allow-listed; an unknown route fails
+  explicitly.
+- Memory rejects obvious secret assignments in required text fields.
+- Web search and live browser inspection are optional, external capabilities.
+- Workflow dry runs demonstrate orchestration but do not turn this library into
+  a full remote agent executor.
+- The generated HTML diagrams are static and use relative local assets.
+
+## Using It as a Codex Plugin
+
+The library can be wrapped as a thin Codex plugin when these tools need to move
+between workspaces. The plugin should point agents at the existing runtime and
+tool folders instead of copying their behavior into a second framework.
+
+See [`PLUGIN_SCAFFOLDING.md`](PLUGIN_SCAFFOLDING.md) for the recommended plugin
+layout, manifest guidance, skill instructions, and validation checklist.
+
+## More Detailed Walkthroughs
+
+- [Agent messaging flow](articles/intuitive-agent-messaging-flow.md)
+- [Generated messaging diagrams](articles/intuitive-agent-messaging-flow-diagrams.html)
+- [Component catalog and orchestration](articles/component-catalog-and-orchestration.md)
+- [Memory-shaped diagram building](articles/memory-shaped-clean-diagram-building.md)
+- [Architecture reference](ARCHITECTURE.md)
+- [Code map](code-map.yaml)
+
+The HTML article pages include lightweight page-view logging through
+`articles/runtime-config.js` and `articles/page-view-logging.js`. GitHub README
+views use the 1x1 image request at the top of this file; GitHub image proxying
+and caching mean it should be treated as an approximate view signal, not exact
+per-reader analytics.

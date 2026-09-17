@@ -1,0 +1,112 @@
+title: Feedback And Memory Architecture Combinations
+subtitle: Alternate static combinations for controller feedback, memory extraction, and review surfaces.
+diagrams:
+  - type: component_stack
+    title: Feedback routing combination
+    components:
+      - component: node-only
+        nodes:
+          - text: Operator signal
+            detail: approval, rework, or stop
+            color: yellow
+      - component: double-node-component
+        nodes:
+          - text: Controller UI
+            detail: visible state
+          - text: Message queue
+            detail: durable event
+      - component: tri-node-component
+        nodes:
+          - text: Strategy
+            detail: decide
+            color: green
+          - text: Runtime
+            detail: execute
+            color: blue
+          - text: Finalizer
+            detail: summarize
+            color: red
+      - component: node-with-down-arrow
+        compact: true
+        nodes:
+          - text: Rework pass
+            detail: bounded retry
+
+  - type: component_stack
+    title: Memory extraction combination
+    components:
+      - component: horizontal-right-arrow
+        nodes:
+          - text: Events
+            icon: E
+            detail: verified facts
+          - text: Candidate
+            icon: C
+            detail: compact memory
+      - component: horizontal-two-way-arrow
+        nodes:
+          - text: Human review
+            icon: H
+            detail: keep or skip
+            style: outline
+          - text: Memory cache
+            icon: M
+            detail: reusable context
+            style: strong
+      - component: horizontal-left-arrow
+        nodes:
+          - text: Next run
+            icon: N
+            detail: receives hint
+          - text: Stored record
+            icon: R
+            detail: source evidence
+      - component: double-node-without-bottom-line
+        nodes:
+          - text: Summary
+            down_arrow: true
+            down_label: user-facing note
+          - text: Evidence
+            down_arrow: true
+            down_label: cited event paths
+
+  - type: component_stack
+    title: Review artifact combination
+    components:
+      - component: square-with-text
+        nodes:
+          - text: Draft
+            detail: local file
+            color: neutral
+      - component: square-with-icon-detail
+        nodes:
+          - text: Tests
+            icon: T
+            detail: focused checks
+            color: green
+            style: strong
+      - component: node-with-top-arrow
+        nodes:
+          - text: Accepted artifact
+            detail: verified output
+      - component: node-with-up-down-arrow
+        nodes:
+          - text: Follow-up
+            detail: iterate only if needed
+
+  - type: flow
+    title: Agent use summary
+    steps:
+      - component: label-upper
+        text: Pick an architecture intent
+      - component: down-arrow-with-right-branches
+        branches:
+          - flow
+          - tree
+          - bus
+          - component stack
+      - component: label-normal
+        text: Choose the smallest matching static component
+      - component: down-arrow
+      - component: label-lower
+        text: Render the YAML and inspect the HTML

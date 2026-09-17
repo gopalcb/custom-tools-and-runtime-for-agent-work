@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Diagram Builder Assets View</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+  <style>
+    body {
+      margin: 0;
+      background: #f8f6f1;
+    }
+
+    .asset-view {
+      width: min(1180px, 100%);
+      display: grid;
+      grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .asset-panel,
+    .asset-stage {
+      border: 1px solid var(--db-border);
+      border-radius: var(--db-radius);
+      background: rgba(255, 255, 255, 0.58);
+      box-shadow: var(--db-shadow);
+    }
+
+    .asset-panel {
+      position: sticky;
+      top: 18px;
+      max-height: calc(100vh - 36px);
+      display: grid;
+      gap: 10px;
+      padding: 12px;
+      overflow: auto;
+    }
+
+    .asset-panel__summary {
+      margin: 0;
+      color: var(--db-text-soft);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .asset-list {
+      display: grid;
+      gap: 6px;
+    }
+
+    .asset-list button,
+    .asset-controls button {
+      min-height: 32px;
+      border: 1px solid var(--db-border);
+      border-radius: var(--db-radius);
+      background: rgba(248, 246, 241, 0.88);
+      color: var(--db-text);
+      font: inherit;
+      font-size: 11px;
+      font-weight: 750;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .asset-list button {
+      padding: 7px 9px;
+    }
+
+    .asset-list button[aria-current="true"] {
+      border-color: var(--db-accent);
+      background: var(--db-accent-soft);
+      color: var(--db-accent);
+    }
+
+    .asset-stage {
+      min-height: 660px;
+      padding: 22px;
+    }
+
+    .asset-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+
+    .asset-controls button {
+      padding: 7px 12px;
+      text-align: center;
+    }
+
+    .asset-count {
+      color: var(--db-text-soft);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .asset-slide {
+      display: none;
+      min-height: 520px;
+    }
+
+    .asset-slide[aria-hidden="false"] {
+      display: grid;
+      gap: 18px;
+      align-content: start;
+    }
+
+    .asset-slide h2 {
+      margin: 0;
+      color: var(--db-text);
+      font-size: 22px;
+      line-height: 1.12;
+    }
+
+    .asset-slide p {
+      max-width: 72ch;
+      margin: 0;
+      color: var(--db-text-soft);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .asset-preview {
+      min-height: 330px;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      border: 1px dashed var(--db-border-strong);
+      border-radius: var(--db-radius);
+      background: rgba(248, 246, 241, 0.48);
+    }
+
+    .asset-inline-tree,
+    .asset-inline-bus {
+      width: min(520px, 100%);
+    }
+
+    .asset-inline-bus {
+      position: relative;
+      min-height: 260px;
+    }
+
+    @media (max-width: 860px) {
+      .asset-view {
+        grid-template-columns: 1fr;
+      }
+
+      .asset-panel {
+        position: relative;
+        top: 0;
+        max-height: none;
+      }
+
+      .asset-list {
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="diagram-page">
+    <div class="diagram-sheet">
+      <h1 class="diagram-title">Diagram Builder Assets View</h1>
+      <p class="diagram-subtitle">Agents use this catalog to choose the smallest static component that explains the next architecture relationship, then compose those components in YAML or direct HTML without animated affordances.</p>
+
+      <section class="asset-view" aria-label="Interactive component catalog">
+        <aside class="asset-panel">
+          <p class="asset-panel__summary">Select a component or step through the catalog one item at a time. Each entry explains how an agent should use the primitive in a system diagram.</p>
+          <nav class="asset-list" aria-label="Components"></nav>
+        </aside>
+
+        <section class="asset-stage">
+          <div class="asset-controls">
+            <button type="button" data-action="previous">Previous</button>
+            <span class="asset-count" aria-live="polite"></span>
+            <button type="button" data-action="next">Next</button>
+          </div>
+
+          <article class="asset-slide" data-name="label-upper">
+            <h2>label-upper</h2>
+            <p>Use for the top-level phase, user intent, or system milestone that starts a flow.</p>
+            <div class="asset-preview"><div class="db-label db-label--upper">User Request</div></div>
+          </article>
+
+          <article class="asset-slide" data-name="label-normal">
+            <h2>label-normal</h2>
+            <p>Use for the ordinary process node in a vertical flow, such as planning, execution, or validation.</p>
+            <div class="asset-preview"><div class="db-label db-label--normal">Workflow Intake</div></div>
+          </article>
+
+          <article class="asset-slide" data-name="label-lower">
+            <h2>label-lower</h2>
+            <p>Use for a lower-emphasis outcome, leaf target, concrete file, or final artifact.</p>
+            <div class="asset-preview"><div class="db-label db-label--lower">Verified Artifact</div></div>
+          </article>
+
+          <article class="asset-slide" data-name="down-arrow">
+            <h2>down-arrow</h2>
+            <p>Use when one flow step moves directly into the next step below it.</p>
+            <div class="asset-preview"><div class="db-connector db-connector--down" aria-hidden="true"></div></div>
+          </article>
+
+          <article class="asset-slide" data-name="down-arrow-with-right-branches">
+            <h2>down-arrow-with-right-branches</h2>
+            <p>Use when the main flow continues downward while the agent records branch context such as tests, files, or memory hints.</p>
+            <div class="asset-preview">
+              <div class="db-connector db-connector--branch-right" aria-hidden="true">
+                <div class="db-connector__spine"></div>
+                <ul class="db-connector__branches">
+                  <li class="db-connector__branch">source files</li>
+                  <li class="db-connector__branch">focused tests</li>
+                  <li class="db-connector__branch">memory notes</li>
+                </ul>
+              </div>
+            </div>
+          </article>
+
+          <article class="asset-slide" data-name="tree-root">
+            <h2>tree-root</h2>
+            <p>Use as the root label for a repository, tool, or artifact tree.</p>
+            <div class="asset-preview"><div class="db-tree asset-inline-tree"><span class="db-tree__root">diagram-builder</span></div></div>
+          </article>
+
+          <article class="asset-slide" data-name="tree-folder">
+            <h2>tree-folder</h2>
+            <p>Use for folder entries inside source or artifact tree diagrams.</p>
+            <div class="asset-preview"><div class="db-tree asset-inline-tree"><span class="db-tree__root">diagram-builder</span><ul><li><span class="db-tree__folder">assets</span></li></ul></div></div>
+          </article>
+
+          <article class="asset-slide" data-name="tree-file">
+            <h2>tree-file</h2>
+            <p>Use for leaf files in a source tree, generated artifact list, or output bundle.</p>
+            <div class="asset-preview"><div class="db-tree asset-inline-tree"><span class="db-tree__root">diagram-builder</span><ul><li><span class="db-tree__file">assets-view.html</span></li></ul></div></div>
+          </article>
+
+          <article class="asset-slide" data-name="bus-source">
+            <h2>bus-source</h2>
+            <p>Use for an event producer feeding runtime state, such as Codex output, tool calls, or workflow progress.</p>
+            <div class="asset-preview"><div class="asset-inline-bus"><div class="db-bus__node db-bus__source" style="--db-x:50%;--db-y:45%;">Tool calls</div></div></div>
+          </article>
+
+          <article class="asset-slide" data-name="bus-hub">
+            <h2>bus-hub</h2>
+            <p>Use for the central event hub, broker, or shared runtime state owner.</p>
+            <div class="asset-preview"><div class="asset-inline-bus"><div class="db-bus__node db-bus__hub" style="--db-x:50%;--db-y:45%;">RuntimeEvent hub</div></div></div>
+          </article>
+
+          <article class="asset-slide" data-name="bus-output">
+            <h2>bus-output</h2>
+            <p>Use for a subscriber or surface that receives runtime events.</p>
+            <div class="asset-preview"><div class="asset-inline-bus"><div class="db-bus__node db-bus__output" style="--db-x:50%;--db-y:45%;">Controller UI</div></div></div>
+          </article>
+
+          <article class="asset-slide" data-name="bus-artifact">
+            <h2>bus-artifact</h2>
+            <p>Use for a persisted artifact after execution, such as summaries, metrics, or memory records.</p>
+            <div class="asset-preview"><div class="asset-inline-bus"><div class="db-bus__node db-bus__artifact" style="--db-x:50%;--db-y:45%;">summary.md</div></div></div>
+          </article>
+
+          <article class="asset-slide" data-name="node-only">
+            <h2>node-only</h2>
+            <p>Use above or below compound components when the connector should be owned by the compound unit.</p>
+            <div class="asset-preview"><div class="db-component db-component--node-only"><div class="db-component__node" style="--db-x:50%;--db-y:50%;">Request contract</div></div></div>
+          </article>
+
+          <article class="asset-slide" data-name="square-with-text">
+            <h2>square-with-text</h2>
+            <p>Use for compact states, small endpoints, flags, or status concepts.</p>
+            <div class="asset-preview"><div class="db-component db-component--square-with-text"><div class="db-component__node db-component__node--square db-component__node--color-neutral db-component__node--style-dashed" style="--db-x:50%;--db-y:50%;"><span class="db-component__text">Ready</span><span class="db-component__detail">static asset</span></div></div></div>
+          </article>
+
+          <article class="asset-slide" data-name="square-with-icon-detail">
+            <h2>square-with-icon-detail</h2>
+            <p>Use when a compact state needs a short badge, title, and detail line.</p>
+            <div class="asset-preview"><div class="db-component db-component--square-with-icon-detail"><div class="db-component__node db-component__node--square db-component__node--size-lg db-component__node--color-blue db-component__node--style-strong" style="--db-x:50%;--db-y:50%;"><span class="db-component__icon">T</span><span class="db-component__text">Tools</span><span class="db-component__detail">local calls</span></div></div></div>
+          </article>
+
+          <article class="asset-slide" data-name="tri-node-component">
+            <h2>tri-node-component</h2>
+            <p>Use for three related paths that fan out from one input and merge to one output.</p>
+            <div class="asset-preview"><div class="db-component db-component--tri-node-component"><svg class="db-component__connectors" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><line x1="50" y1="0" x2="50" y2="20" /><line x1="16" y1="20" x2="84" y2="20" /><line x1="16" y1="20" x2="16" y2="39" /><line x1="50" y1="20" x2="50" y2="39" /><line x1="84" y1="20" x2="84" y2="39" /><line x1="16" y1="61" x2="16" y2="76" /><line x1="50" y1="61" x2="50" y2="76" /><line x1="84" y1="61" x2="84" y2="76" /><line x1="16" y1="76" x2="84" y2="76" /><line x1="50" y1="76" x2="50" y2="94" /></svg><span class="db-component__arrowhead" aria-hidden="true" style="--db-x:16%;--db-y:39%;"></span><span class="db-component__arrowhead" aria-hidden="true" style="--db-x:50%;--db-y:39%;"></span><span class="db-component__arrowhead" aria-hidden="true" style="--db-x:84%;--db-y:39%;"></span><span class="db-component__arrowhead" aria-hidden="true" style="--db-x:50%;--db-y:94%;"></span><div class="db-component__node" style="--db-x:16%;--db-y:50%;">Plan</div><div class="db-component__node" style="--db-x:50%;--db-y:50%;">Inspect</div><div class="db-component__node" style="--db-x:84%;--db-y:50%;">Patch</div></div></div>
+          </article>
+
+          <article class="asset-slide" data-name="double-node-component">
+            <h2>double-node-component</h2>
+            <p>Use for two related paths that share one incoming and one outgoing line.</p>
+            <div class="asset-preview"><div class="db-component db-component--double-node-component"><svg class="db-component__connectors" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><line x1="50" y1="0" x2="50" y2="20" /><line x1="27" y1="20" x2="73" y2="20" /><line x1="27" y1="20" x2="27" y2="39" /><line x1="73" y1="20" x2="73" y2="39" /><line x1="27" y1="61" x2="27" y2="76" /><line x1="73" y1="61" x2="73" y2="76" /><line x1="27" y1="76" x2="73" y2="76" /><line x1="50" y1="76" x2="50" y2="94" /></svg><span class="db-component__arrowhead" aria-hidden="true" style="--db-x:27%;--db-y:39%;"></span><span class="db-component__arrowhead" aria-hidden="true" style="--db-x:73%;--db-y:39%;"></span><span class="db-component__arrowhead" aria-hidden="true" style="--db-x:50%;--db-y:94%;"></span><div class="db-component__node" style="--db-x:27%;--db-y:50%;">Events</div><div class="db-component__node" style="--db-x:73%;--db-y:50%;">Subscribers</div></div></div>
+          </article>
+
+          <article class="asset-slide" data-name="node-with-up-down-arrow">
+            <h2>node-with-up-down-arrow</h2>
+            <p>Use for a single validation or ownership gate that receives one input and sends one output.</p>
+            <div class="asset-preview"><div class="db-component db-component--node-with-up-down-arrow"><svg class="db-component__connectors" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><line x1="50" y1="4" x2="50" y2="39" /><line x1="50" y1="61" x2="50" y2="84" /></svg><span class="db-component__arrowhead" aria-hidden="true" style="--db-x:50%;--db-y:39%;"></span><span class="db-component__arrowhead" aria-hidden="true" style="--db-x:50%;--db-y:84%;"></span><div class="db-component__node" style="--db-x:50%;--db-y:51%;">Validation gate</div></div></div>
+          </article>
+
+          <article class="asset-slide" data-name="node-with-down-arrow">
+            <h2>node-with-down-arrow</h2>
+            <p>Use for a source node that only needs to show the next destination below.</p>
+            <div class="asset-preview"><div class="db-component db-component--node-with-down-arrow"><svg class="db-component__connectors" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><line x1="50" y1="60" x2="50" y2="88" /></svg><span class="db-component__arrowhead" aria-hidden="true" style="--db-x:50%;--db-y:88%;"></span><div class="db-component__node" style="--db-x:50%;--db-y:50%;">Agent Runtime</div></div></div>
+          </article>
+
+          <article class="asset-slide" data-name="node-with-top-arrow">
+            <h2>node-with-top-arrow</h2>
+            <p>Use for a sink node that only needs to show an incoming relationship from above.</p>
+            <div class="asset-preview"><div class="db-component db-component--node-with-top-arrow"><svg class="db-component__connectors" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><line x1="50" y1="8" x2="50" y2="39" /></svg><span class="db-component__arrowhead" aria-hidden="true" style="--db-x:50%;--db-y:39%;"></span><div class="db-component__node" style="--db-x:50%;--db-y:50%;">Finalizer</div></div></div>
+          </article>
+
+          <article class="asset-slide" data-name="tri-node-without-bottom-line">
+            <h2>tri-node-without-bottom-line</h2>
+            <p>Use when three outputs share an incoming rail but do not merge back together.</p>
+            <div class="asset-preview"><div class="db-component db-component--tri-node-without-bottom-line"><svg class="db-component__connectors" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><line x1="50" y1="0" x2="50" y2="20" /><line x1="16" y1="20" x2="84" y2="20" /><line x1="16" y1="20" x2="16" y2="39" /><line x1="50" y1="20" x2="50" y2="39" /><line x1="84" y1="20" x2="84" y2="39" /><line x1="50" y1="60" x2="50" y2="78" /></svg><span class="db-component__arrowhead" aria-hidden="true" style="--db-x:16%;--db-y:39%;"></span><span class="db-component__arrowhead" aria-hidden="true" style="--db-x:50%;--db-y:39%;"></span><span class="db-component__arrowhead" aria-hidden="true" style="--db-x:84%;--db-y:39%;"></span><span class="db-component__arrowhead" aria-hidden="true" style="--db-x:50%;--db-y:78%;"></span><div class="db-component__node" style="--db-x:16%;--db-y:50%;">Summary</div><div class="db-component__node" style="--db-x:50%;--db-y:50%;">Metrics</div><div class="db-component__node" style="--db-x:84%;--db-y:50%;">Artifacts</div><div class="db-component__caption" style="--db-x:50%;--db-y:91%;">memory candidates</div></div></div>
+          </article>
+
+          <article class="asset-slide" data-name="double-node-without-bottom-line">
+            <h2>double-node-without-bottom-line</h2>
+            <p>Use when two outputs share an incoming rail and continue independently.</p>
+            <div class="asset-preview"><div class="db-component db-component--double-node-without-bottom-line"><svg class="db-component__connectors" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><line x1="50" y1="0" x2="50" y2="20" /><line x1="27" y1="20" x2="73" y2="20" /><line x1="27" y1="20" x2="27" y2="39" /><line x1="73" y1="20" x2="73" y2="39" /><line x1="27" y1="60" x2="27" y2="78" /><line x1="73" y1="60" x2="73" y2="78" /></svg><span class="db-component__arrowhead" aria-hidden="true" style="--db-x:27%;--db-y:39%;"></span><span class="db-component__arrowhead" aria-hidden="true" style="--db-x:73%;--db-y:39%;"></span><span class="db-component__arrowhead" aria-hidden="true" style="--db-x:27%;--db-y:78%;"></span><span class="db-component__arrowhead" aria-hidden="true" style="--db-x:73%;--db-y:78%;"></span><div class="db-component__node" style="--db-x:27%;--db-y:50%;">YAML</div><div class="db-component__node" style="--db-x:73%;--db-y:50%;">HTML</div><div class="db-component__caption" style="--db-x:27%;--db-y:91%;">source</div><div class="db-component__caption" style="--db-x:73%;--db-y:91%;">view</div></div></div>
+          </article>
+
+          <article class="asset-slide" data-name="horizontal-right-arrow">
+            <h2>horizontal-right-arrow</h2>
+            <p>Use for a direct left-to-right handoff, transformation, or dependency.</p>
+            <div class="asset-preview"><div class="db-component db-component--horizontal-right-arrow"><svg class="db-component__connectors" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><line x1="40" y1="50" x2="60" y2="50" /></svg><span class="db-component__arrowhead-horizontal db-component__arrowhead-horizontal--right" aria-hidden="true" style="--db-x:60%;--db-y:50%;"></span><div class="db-component__node" style="--db-x:27%;--db-y:50%;">Catalog</div><div class="db-component__node" style="--db-x:73%;--db-y:50%;">Renderer</div></div></div>
+          </article>
+
+          <article class="asset-slide" data-name="horizontal-left-arrow">
+            <h2>horizontal-left-arrow</h2>
+            <p>Use for a right-to-left dependency where the consumer reads from the source.</p>
+            <div class="asset-preview"><div class="db-component db-component--horizontal-left-arrow"><svg class="db-component__connectors" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><line x1="40" y1="50" x2="60" y2="50" /></svg><span class="db-component__arrowhead-horizontal db-component__arrowhead-horizontal--left" aria-hidden="true" style="--db-x:40%;--db-y:50%;"></span><div class="db-component__node" style="--db-x:27%;--db-y:50%;">UI</div><div class="db-component__node" style="--db-x:73%;--db-y:50%;">State</div></div></div>
+          </article>
+
+          <article class="asset-slide" data-name="horizontal-two-way-arrow">
+            <h2>horizontal-two-way-arrow</h2>
+            <p>Use for a stable bidirectional relationship such as agent feedback with runtime state.</p>
+            <div class="asset-preview"><div class="db-component db-component--horizontal-two-way-arrow"><svg class="db-component__connectors" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><line x1="40" y1="50" x2="60" y2="50" /></svg><span class="db-component__arrowhead-horizontal db-component__arrowhead-horizontal--right" aria-hidden="true" style="--db-x:60%;--db-y:50%;"></span><span class="db-component__arrowhead-horizontal db-component__arrowhead-horizontal--left" aria-hidden="true" style="--db-x:40%;--db-y:50%;"></span><div class="db-component__node" style="--db-x:27%;--db-y:50%;">Agent</div><div class="db-component__node" style="--db-x:73%;--db-y:50%;">Runtime</div></div></div>
+          </article>
+        </section>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const slides = Array.from(document.querySelectorAll(".asset-slide"));
+    const list = document.querySelector(".asset-list");
+    const count = document.querySelector(".asset-count");
+    let activeIndex = 0;
+
+    slides.forEach((slide, index) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = slide.dataset.name;
+      button.addEventListener("click", () => showSlide(index));
+      list.appendChild(button);
+    });
+
+    const buttons = Array.from(list.querySelectorAll("button"));
+
+    function showSlide(index) {
+      activeIndex = (index + slides.length) % slides.length;
+      slides.forEach((slide, slideIndex) => {
+        slide.setAttribute("aria-hidden", String(slideIndex !== activeIndex));
+      });
+      buttons.forEach((button, buttonIndex) => {
+        button.setAttribute("aria-current", String(buttonIndex === activeIndex));
+      });
+      count.textContent = `${activeIndex + 1} of ${slides.length}`;
+    }
+
+    document.querySelector('[data-action="previous"]').addEventListener("click", () => showSlide(activeIndex - 1));
+    document.querySelector('[data-action="next"]').addEventListener("click", () => showSlide(activeIndex + 1));
+    showSlide(0);
+  </script>
+</body>
+</html>

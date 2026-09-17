@@ -1,0 +1,112 @@
+title: Memory Shaped Clean Diagram Building
+subtitle: A set of diagrams showing how repeated choices became reusable diagram parts.
+diagrams:
+  - type: flow
+    title: Memory loop
+    steps:
+      - component: label-upper
+        text: MAKE A DIAGRAM
+      - component: down-arrow
+      - component: label-normal
+        text: Notice what repeats
+      - component: down-arrow-with-right-branches
+        branches:
+          - shape
+          - connector
+          - label pattern
+      - component: label-normal
+        text: Name the reusable part
+      - component: down-arrow
+      - component: label-lower
+        text: next diagram starts cleaner
+
+  - type: tree
+    title: Builder memory tree
+    root:
+      name: diagram-builder/
+      children:
+        - name: remembered-shapes
+          children:
+            - name: flow labels
+            - name: tree nodes
+            - name: event bus
+            - name: fan-in components
+        - name: visual-rules
+          children:
+            - name: fixed geometry
+            - name: short labels
+            - name: connector ownership
+        - name: generated-output
+          children:
+            - name: article diagrams
+            - name: component guide
+
+  - type: event_bus
+    title: Memory moving through the builder
+    runtime: Author
+    sources:
+      - repeated diagrams
+      - useful labels
+      - layout fixes
+    hub: Component catalog
+    outputs:
+      - name: clean YAML
+      - name: stable HTML
+        child: generated diagram
+    post_completion:
+      name: Reuse
+      artifacts:
+        - named components
+        - examples
+        - article diagrams
+      metric_child: better next draft
+
+  - type: component_stack
+    title: From one-off drawing to reusable system
+    components:
+      - component: node-only
+        compact: true
+        nodes:
+          - One-off diagram
+      - component: tri-node-component
+        compact: true
+        nodes:
+          - repeated shape
+          - repeated label
+          - repeated connector
+      - component: node-only
+        compact: true
+        nodes:
+          - Named component
+      - component: double-node-component
+        compact: true
+        nodes:
+          - cleaner YAML
+          - cleaner article
+      - component: node-only
+        nodes:
+          - Consistent diagram builder
+
+  - type: component
+    title: Peer relationship
+    component: horizontal-two-way-arrow
+    nodes:
+      - text: Memory
+        icon: M
+        detail: remembers patterns
+        color: green
+      - text: Builder
+        icon: B
+        detail: renders consistently
+        color: blue
+
+  - type: component
+    title: Small state
+    component: square-with-icon-detail
+    nodes:
+      - text: Clean
+        icon: C
+        detail: short label, stable shape
+        size: lg
+        color: yellow
+        style: strong
